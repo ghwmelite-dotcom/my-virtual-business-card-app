@@ -177,6 +177,7 @@ input, button {
 .editor-section:nth-child(2) { animation-delay: 0.15s; }
 .editor-section:nth-child(3) { animation-delay: 0.2s; }
 .editor-section:nth-child(4) { animation-delay: 0.25s; }
+.editor-section:nth-child(5) { animation-delay: 0.3s; }
 
 @keyframes fadeInUp {
     from {
@@ -479,6 +480,285 @@ input, button {
     background: var(--accent-soft);
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   Share Section Styles
+   ═══════════════════════════════════════════════════════════════ */
+
+/* URL Share Box */
+.url-share-box {
+    display: flex;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-sm);
+}
+
+.url-input {
+    flex: 1;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    padding-right: var(--space-sm);
+}
+
+.copy-url-btn {
+    width: 44px;
+    height: 44px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s var(--ease-out);
+    flex-shrink: 0;
+}
+
+.copy-url-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-soft);
+}
+
+.copy-url-btn.copied {
+    background: #00b894;
+    border-color: #00b894;
+    color: white;
+}
+
+.copy-url-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+.generate-link-btn {
+    width: 100%;
+    padding: var(--space-sm) var(--space-md);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    transition: all 0.2s var(--ease-out);
+}
+
+.generate-link-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-soft);
+}
+
+.generate-link-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Share Buttons */
+.share-buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-sm);
+}
+
+.share-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-md) var(--space-sm);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s var(--ease-out);
+    color: var(--text-secondary);
+}
+
+.share-btn svg {
+    width: 24px;
+    height: 24px;
+}
+
+.share-btn span {
+    font-size: 0.625rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.share-btn:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-active);
+}
+
+.share-btn.whatsapp:hover {
+    background: rgba(37, 211, 102, 0.15);
+    border-color: #25D366;
+    color: #25D366;
+}
+
+.share-btn.sms:hover {
+    background: rgba(0, 122, 255, 0.15);
+    border-color: #007AFF;
+    color: #007AFF;
+}
+
+.share-btn.email-share:hover {
+    background: rgba(234, 67, 53, 0.15);
+    border-color: #EA4335;
+    color: #EA4335;
+}
+
+.share-btn.native:hover {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+/* NFC Section */
+.nfc-btn {
+    width: 100%;
+    padding: var(--space-md);
+    background: linear-gradient(135deg, var(--bg-elevated), var(--bg-hover));
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    transition: all 0.3s var(--ease-out);
+    text-align: left;
+}
+
+.nfc-btn:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.nfc-btn:active {
+    transform: scale(0.98);
+}
+
+.nfc-btn.scanning {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+}
+
+.nfc-btn.scanning .nfc-icon {
+    animation: nfc-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes nfc-pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.7; }
+}
+
+.nfc-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: var(--accent-soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+    flex-shrink: 0;
+}
+
+.nfc-icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.nfc-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.nfc-text strong {
+    color: var(--text-primary);
+    font-size: 0.9375rem;
+    font-weight: 500;
+}
+
+.nfc-text span {
+    color: var(--text-tertiary);
+    font-size: 0.75rem;
+}
+
+.nfc-status {
+    margin-top: var(--space-sm);
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    text-align: center;
+}
+
+.nfc-status.success {
+    color: #00b894;
+}
+
+.nfc-status.error {
+    color: var(--accent);
+}
+
+#nfcSection.hidden {
+    display: none;
+}
+
+/* Wallet Buttons */
+.wallet-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-sm);
+}
+
+.wallet-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    padding: var(--space-md);
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    transition: all 0.2s var(--ease-out);
+}
+
+.wallet-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.wallet-btn.apple {
+    background: #000;
+    color: #fff;
+}
+
+.wallet-btn.apple:hover {
+    background: #1a1a1a;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+.wallet-btn.google {
+    background: #fff;
+    color: #1a1a1a;
+    border: 1px solid var(--border);
+}
+
+.wallet-btn.google:hover {
+    background: #f5f5f5;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
 /* Export Section */
 .export-section {
     padding: var(--space-lg);
@@ -486,14 +766,18 @@ input, button {
     background: var(--bg-surface);
 }
 
+.export-buttons {
+    display: flex;
+    gap: var(--space-sm);
+}
+
 .export-btn {
-    width: 100%;
+    flex: 1;
     padding: var(--space-md) var(--space-lg);
-    background: var(--accent);
     color: white;
     border: none;
     border-radius: 10px;
-    font-size: 1rem;
+    font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
     display: flex;
@@ -503,6 +787,16 @@ input, button {
     transition: all 0.3s var(--ease-out);
     position: relative;
     overflow: hidden;
+}
+
+.export-btn.primary {
+    background: var(--accent);
+}
+
+.export-btn.secondary {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
 }
 
 .export-btn::before {
@@ -518,14 +812,20 @@ input, button {
     transform: translateX(100%);
 }
 
-.export-btn:hover {
+.export-btn.primary:hover {
     transform: translateY(-2px);
     box-shadow: 0 10px 30px var(--accent-glow);
 }
 
+.export-btn.secondary:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    transform: translateY(-2px);
+}
+
 .export-btn svg {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
 }
 
 /* ═══════════════════════════════════════════════════════════════

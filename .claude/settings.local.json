@@ -3,7 +3,27 @@
     "allow": [
       "Bash(git init:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(gh repo edit:*)",
+      "Bash(gh repo view:*)",
+      "mcp__plugin_context7_context7__resolve-library-id",
+      "mcp__plugin_context7_context7__query-docs",
+      "WebSearch",
+      "mcp__claude_ai_Cloudflare_Developer_Platform__search_cloudflare_documentation",
+      "mcp__claude_ai_Cloudflare_Developer_Platform__accounts_list",
+      "mcp__claude_ai_Cloudflare_Developer_Platform__set_active_account",
+      "WebFetch(domain:developers.cloudflare.com)",
+      "Bash(npx wrangler pages deploy:*)",
+      "Bash(npx wrangler login)",
+      "Bash(npx wrangler pages project create my-virtual-business-card-app --production-branch main)",
+      "Bash(npx wrangler:*)",
+      "Bash(TOKEN=\"vJE29-cDqw2HJ2y9XgNSfpn97Ntsh1XnNFxR7WjeW_U.ULrURoC_3nVZnhgt8NNOLzafHUhuOeAnFS39P0Rj08M\")",
+      "Bash(curl:*)",
+      "mcp__claude_ai_Cloudflare_Developer_Platform__kv_namespaces_list",
+      "mcp__claude_ai_Cloudflare_Developer_Platform__d1_databases_list",
+      "WebFetch(domain:cardcraft.pages.dev)"
     ]
   }
 }

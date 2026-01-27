@@ -77,28 +77,168 @@ class CardCraft {
         this.initTheme();
         this.bindElements();
         this.bindEvents();
-        this.loadSavedData();
+        this.loadFromCloud(); // Try cloud first
         this.loadFromURL();
         this.generateQRCode();
-        this.setupAutoSave();
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // Data Persistence (localStorage)
+    // Cloud Save/Load (Cloudflare KV)
+    // ═══════════════════════════════════════════════════════════════
+
+    async loadFromCloud() {
+        // Check if we have a draft ID saved
+        const draftId = localStorage.getItem('cardcraft-draft-id');
+        if (!draftId) {
+            console.log('[CardCraft] No cloud draft ID found');
+            return;
+        }
+
+        console.log('[CardCraft] Loading from cloud, draft ID:', draftId);
+
+        try {
+            const response = await fetch(`/api/load-draft?id=${draftId}`);
+            const result = await response.json();
+
+            if (result.success && result.draft) {
+                this.applyCardData(result.draft);
+                console.log('[CardCraft] Cloud data loaded successfully');
+                this.showToast('Card restored from cloud');
+            } else {
+                console.log('[CardCraft] No cloud draft found');
+            }
+        } catch (error) {
+            console.error('[CardCraft] Failed to load from cloud:', error);
+        }
+    }
+
+    async saveToCloud() {
+        const saveBtn = document.getElementById('saveProgressBtn');
+        const saveText = saveBtn?.querySelector('.save-text');
+
+        if (saveBtn) {
+            saveBtn.classList.add('saving');
+            if (saveText) saveText.textContent = 'Saving';
+        }
+
+        try {
+            const cardData = this.getAllCardData();
+            const existingDraftId = localStorage.getItem('cardcraft-draft-id');
+
+            const response = await fetch('/api/save-draft', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    draftId: existingDraftId,
+                    cardData
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // Store the draft ID for future loads
+                localStorage.setItem('cardcraft-draft-id', result.draftId);
+                console.log('[CardCraft] Saved to cloud, draft ID:', result.draftId);
+
+                if (saveBtn) {
+                    saveBtn.classList.remove('saving');
+                    saveBtn.classList.add('saved');
+                    if (saveText) saveText.textContent = 'Saved!';
+
+                    setTimeout(() => {
+                        saveBtn.classList.remove('saved');
+                        if (saveText) saveText.textContent = 'Save';
+                    }, 2000);
+                }
+
+                this.showToast('Saved to cloud!');
+            } else {
+                throw new Error(result.error || 'Save failed');
+            }
+        } catch (error) {
+            console.error('[CardCraft] Cloud save failed:', error);
+            if (saveBtn) {
+                saveBtn.classList.remove('saving');
+                if (saveText) saveText.textContent = 'Save';
+            }
+            this.showToast('Save failed - try again');
+        }
+    }
+
+    getAllCardData() {
+        return {
+            fullName: this.state.fullName,
+            jobTitle: this.state.jobTitle,
+            company: this.state.company,
+            email: this.state.email,
+            phone: this.state.phone,
+            website: this.state.website,
+            location: this.state.location,
+            linkedin: this.state.linkedin,
+            twitter: this.state.twitter,
+            profilePhoto: this.state.profilePhoto,
+            companyLogo: this.state.companyLogo,
+            cardStyle: this.state.cardStyle,
+            accentColor: this.state.accentColor,
+            fontStyle: this.state.fontStyle,
+            textColor: this.state.textColor,
+            schedulerUrl: this.state.schedulerUrl,
+            enableScheduler: this.state.enableScheduler,
+            enableFollowUp: this.state.enableFollowUp,
+            selectedTone: this.state.selectedTone,
+            generatedBio: this.state.generatedBio,
+            videoData: this.state.videoData
+        };
+    }
+
+    applyCardData(data) {
+        if (!data) return;
+
+        // Apply text fields
+        const textFields = ['fullName', 'jobTitle', 'company', 'email', 'phone', 'website', 'location', 'linkedin', 'twitter'];
+        textFields.forEach(field => {
+            if (data[field]) {
+                if (this.inputs[field]) {
+                    this.inputs[field].value = data[field];
+                }
+                this.state[field] = data[field];
+                this.updateField(field, data[field]);
+            }
+        });
+
+        // Apply styles
+        if (data.cardStyle) this.setCardStyle(data.cardStyle);
+        if (data.accentColor) this.setAccentColor(data.accentColor, null);
+        if (data.fontStyle) this.setFontStyle(data.fontStyle);
+        if (data.textColor) this.setTextColor(data.textColor, null);
+
+        // Apply images
+        if (data.profilePhoto) {
+            this.state.profilePhoto = data.profilePhoto;
+            this.updatePhotoPreview(data.profilePhoto);
+            this.updateCardPhoto(data.profilePhoto);
+        }
+        if (data.companyLogo) {
+            this.state.companyLogo = data.companyLogo;
+            this.updateLogoPreview(data.companyLogo);
+            this.updateCardLogo(data.companyLogo);
+        }
+
+        // Apply other settings
+        if (data.schedulerUrl) this.state.schedulerUrl = data.schedulerUrl;
+        if (data.enableScheduler) this.state.enableScheduler = data.enableScheduler;
+        if (data.enableFollowUp) this.state.enableFollowUp = data.enableFollowUp;
+        if (data.selectedTone) this.state.selectedTone = data.selectedTone;
+        if (data.generatedBio) this.state.generatedBio = data.generatedBio;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // Local Data Persistence (localStorage backup)
     // ═══════════════════════════════════════════════════════════════
 
     setupAutoSave() {
-        // Save before page unloads
-        window.addEventListener('beforeunload', () => {
-            this.saveCardData();
-        });
-
-        // Auto-save every 5 seconds as backup
-        setInterval(() => {
-            this.saveCardData();
-        }, 5000);
-
-        // Save on visibility change (when user switches tabs)
+        // This is now just for localStorage backup, cloud save is manual
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') {
                 this.saveCardData();
@@ -108,7 +248,10 @@ class CardCraft {
 
     saveCardData() {
         // Don't save while loading
-        if (this._isLoading) return;
+        if (this._isLoading) {
+            console.log('[CardCraft] Skipping save (loading in progress)');
+            return;
+        }
 
         try {
             const dataToSave = {
@@ -135,24 +278,45 @@ class CardCraft {
                 savedAt: new Date().toISOString()
             };
             localStorage.setItem('cardcraft-data', JSON.stringify(dataToSave));
+            console.log('[CardCraft] Data saved successfully, fields:',
+                Object.keys(dataToSave).filter(k => dataToSave[k] && k !== 'savedAt').length);
         } catch (e) {
-            console.warn('Failed to save card data:', e);
+            console.error('[CardCraft] Failed to save card data:', e);
         }
     }
 
     loadSavedData() {
+        console.log('[CardCraft] loadSavedData called');
+
+        // Test localStorage availability first
+        try {
+            localStorage.setItem('cardcraft-test', 'test');
+            localStorage.removeItem('cardcraft-test');
+            console.log('[CardCraft] localStorage is available');
+        } catch (e) {
+            console.error('[CardCraft] localStorage NOT available:', e);
+            return;
+        }
+
         try {
             const saved = localStorage.getItem('cardcraft-data');
+            console.log('[CardCraft] Retrieved from storage:', saved ? 'data found (' + saved.length + ' chars)' : 'null/empty');
+
             if (!saved) {
-                console.log('No saved card data found');
+                console.log('[CardCraft] No saved card data found - this is normal for first visit');
                 return;
             }
 
             const data = JSON.parse(saved);
-            console.log('Loading saved card data from:', data.savedAt || 'unknown time');
+            console.log('[CardCraft] Parsed data successfully');
+            console.log('[CardCraft] savedAt:', data.savedAt);
+            console.log('[CardCraft] Fields with data:', Object.keys(data).filter(k => data[k] && k !== 'savedAt').join(', '));
 
             // Track if we loaded any data
             let loadedFields = 0;
+
+            // IMPORTANT: Set loading flag to prevent saves during restore
+            this._isLoading = true;
 
             // Load text fields
             const textFields = ['fullName', 'jobTitle', 'company', 'email', 'phone', 'website', 'location', 'linkedin', 'twitter'];
@@ -164,14 +328,12 @@ class CardCraft {
                 }
             });
 
-            // Update card display (without triggering saves)
-            this._isLoading = true;
+            // Update card display
             textFields.forEach(field => {
                 if (data[field]) {
                     this.updateField(field, data[field]);
                 }
             });
-            this._isLoading = false;
 
             // Load style settings
             if (data.cardStyle) this.setCardStyle(data.cardStyle);
@@ -198,7 +360,10 @@ class CardCraft {
             if (data.selectedTone) this.state.selectedTone = data.selectedTone;
             if (data.generatedBio) this.state.generatedBio = data.generatedBio;
 
-            console.log('Loaded saved card data:', loadedFields, 'fields restored');
+            // IMPORTANT: Only now allow saves again
+            this._isLoading = false;
+
+            console.log('[CardCraft] Loaded saved card data:', loadedFields, 'fields restored');
 
             // Show restore notification if we loaded meaningful data
             if (loadedFields > 0) {
@@ -576,6 +741,12 @@ class CardCraft {
 
         if (this.previewModeBtn) {
             this.previewModeBtn.addEventListener('click', () => this.togglePreviewMode());
+        }
+
+        // Save to cloud button
+        const saveProgressBtn = document.getElementById('saveProgressBtn');
+        if (saveProgressBtn) {
+            saveProgressBtn.addEventListener('click', () => this.saveToCloud());
         }
 
         // Theme toggle

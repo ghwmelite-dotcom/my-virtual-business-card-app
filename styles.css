@@ -359,6 +359,53 @@ input, button, textarea {
     background: var(--accent-dark);
 }
 
+/* Save Button */
+.btn-save {
+    background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
+    color: white;
+    border: none;
+    padding: var(--space-2) var(--space-4);
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    transition: all 0.2s var(--ease);
+}
+
+.btn-save:hover {
+    background: linear-gradient(135deg, #16A34A 0%, #15803D 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+.btn-save svg {
+    width: 16px;
+    height: 16px;
+}
+
+.btn-save.saving {
+    pointer-events: none;
+    opacity: 0.8;
+}
+
+.btn-save.saving .save-text::after {
+    content: '...';
+    animation: savingDots 1.5s infinite;
+}
+
+.btn-save.saved {
+    background: linear-gradient(135deg, #16A34A 0%, #15803D 100%);
+}
+
+@keyframes savingDots {
+    0%, 20% { content: '.'; }
+    40% { content: '..'; }
+    60%, 100% { content: '...'; }
+}
+
 .btn-icon {
     width: 36px;
     height: 36px;

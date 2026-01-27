@@ -9,10 +9,11 @@
 }
 
 :root {
-    /* Refined Palette */
+    /* Refined Palette - Light Mode */
     --bg: #FAF9F7;
     --bg-warm: #F5F3EF;
     --bg-card: #FFFFFF;
+    --bg-elevated: #FFFFFF;
 
     --text: #1A1A1A;
     --text-secondary: #666666;
@@ -29,6 +30,9 @@
     --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
     --shadow-lg: 0 12px 40px rgba(0,0,0,0.08);
     --shadow-card: 0 25px 80px rgba(0,0,0,0.12), 0 8px 24px rgba(0,0,0,0.06);
+
+    /* Nav specific */
+    --nav-bg: rgba(250, 249, 247, 0.8);
 
     /* Typography */
     --font-display: 'Fraunces', Georgia, serif;
@@ -56,6 +60,45 @@
     --card-text: #1A1A1A;
     --card-text-secondary: #666666;
     --card-accent: var(--accent);
+
+    /* Theme transition */
+    --theme-transition: background-color 0.4s var(--ease),
+                        color 0.3s var(--ease),
+                        border-color 0.3s var(--ease),
+                        box-shadow 0.3s var(--ease);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Dark Mode
+   ═══════════════════════════════════════════════════════════════ */
+
+[data-theme="dark"] {
+    --bg: #0D0D0F;
+    --bg-warm: #151518;
+    --bg-card: #1A1A1E;
+    --bg-elevated: #222226;
+
+    --text: #F5F5F7;
+    --text-secondary: #A1A1A6;
+    --text-muted: #6E6E73;
+
+    --accent: #D4915C;
+    --accent-light: rgba(212, 145, 92, 0.15);
+    --accent-dark: #E8A872;
+
+    --border: #2C2C30;
+    --border-light: #222226;
+
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.3);
+    --shadow-lg: 0 12px 40px rgba(0,0,0,0.4);
+    --shadow-card: 0 25px 80px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.3);
+
+    --nav-bg: rgba(13, 13, 15, 0.85);
+
+    --card-bg: #1A1A1E;
+    --card-text: #F5F5F7;
+    --card-text-secondary: #A1A1A6;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -81,6 +124,13 @@ body {
     color: var(--text);
     line-height: 1.5;
     min-height: 100vh;
+    transition: var(--theme-transition);
+}
+
+/* Prevent flash on page load */
+body.no-transition,
+body.no-transition * {
+    transition: none !important;
 }
 
 input, button, textarea {
@@ -106,6 +156,20 @@ input, button, textarea {
     opacity: 0.4;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
     z-index: 0;
+    transition: opacity 0.4s var(--ease);
+}
+
+[data-theme="dark"] .bg-texture {
+    opacity: 0.15;
+}
+
+/* Ambient gradient for dark mode */
+[data-theme="dark"] .preview::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 40%, rgba(212, 145, 92, 0.06) 0%, transparent 70%);
+    pointer-events: none;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -120,9 +184,11 @@ input, button, textarea {
     align-items: center;
     justify-content: space-between;
     padding: var(--space-4) var(--space-6);
-    background: rgba(250, 249, 247, 0.8);
+    background: var(--nav-bg);
     backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border-light);
+    transition: var(--theme-transition);
 }
 
 .nav-brand {
@@ -148,6 +214,61 @@ input, button, textarea {
     display: flex;
     align-items: center;
     gap: var(--space-3);
+}
+
+/* Theme Toggle */
+.theme-toggle {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--bg-elevated);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s var(--ease);
+}
+
+.theme-toggle:hover {
+    border-color: var(--accent);
+    background: var(--accent-light);
+    transform: scale(1.05);
+}
+
+.theme-toggle:active {
+    transform: scale(0.95);
+}
+
+.theme-icon {
+    width: 20px;
+    height: 20px;
+    position: absolute;
+    transition: all 0.5s var(--ease-out);
+}
+
+.theme-icon.sun {
+    color: var(--accent);
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+}
+
+.theme-icon.moon {
+    color: var(--accent);
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.5);
+}
+
+[data-theme="dark"] .theme-icon.sun {
+    opacity: 0;
+    transform: rotate(90deg) scale(0.5);
+}
+
+[data-theme="dark"] .theme-icon.moon {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
 }
 
 /* Buttons */
@@ -192,13 +313,23 @@ input, button, textarea {
 
 .btn-primary {
     background: var(--text);
-    color: white;
+    color: var(--bg);
+    transition: all 0.2s var(--ease);
 }
 
 .btn-primary:hover {
-    background: #333;
+    background: var(--text-secondary);
     transform: translateY(-1px);
     box-shadow: var(--shadow-md);
+}
+
+[data-theme="dark"] .btn-primary {
+    background: var(--accent);
+    color: #0D0D0F;
+}
+
+[data-theme="dark"] .btn-primary:hover {
+    background: var(--accent-dark);
 }
 
 .btn-icon {
@@ -209,7 +340,7 @@ input, button, textarea {
     justify-content: center;
     border-radius: 8px;
     border: 1px solid var(--border);
-    background: white;
+    background: var(--bg-card);
     color: var(--text-secondary);
     cursor: pointer;
     transition: all 0.2s var(--ease);
@@ -247,7 +378,7 @@ input, button, textarea {
    ═══════════════════════════════════════════════════════════════ */
 
 .editor {
-    background: white;
+    background: var(--bg-elevated);
     border-right: 1px solid var(--border-light);
     height: calc(100vh - 65px);
     position: sticky;
@@ -255,6 +386,7 @@ input, button, textarea {
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    transition: var(--theme-transition);
 }
 
 .editor-inner {
@@ -274,6 +406,10 @@ input, button, textarea {
 .editor-inner::-webkit-scrollbar-thumb {
     background: var(--border);
     border-radius: 3px;
+}
+
+.editor-inner::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
 }
 
 /* Tabs */
@@ -304,7 +440,7 @@ input, button, textarea {
 }
 
 .tab.active {
-    background: white;
+    background: var(--bg-card);
     color: var(--text);
     box-shadow: var(--shadow-sm);
 }
@@ -371,7 +507,7 @@ input, button, textarea {
     border-radius: 8px;
     font-size: 0.875rem;
     color: var(--text);
-    background: white;
+    background: var(--bg-card);
     transition: all 0.2s var(--ease);
 }
 
@@ -459,7 +595,7 @@ input, button, textarea {
     padding: var(--space-3);
     border: 1px solid var(--border);
     border-radius: 10px;
-    background: white;
+    background: var(--bg-card);
     cursor: pointer;
     transition: all 0.2s var(--ease);
 }
@@ -495,8 +631,8 @@ input, button, textarea {
 }
 
 .style-preview.minimal {
-    background: white;
-    border: 1px solid #e0e0e0;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
 }
 
 .style-preview::after {
@@ -624,6 +760,7 @@ input, button, textarea {
     font-family: var(--font-mono);
     color: var(--text);
     background: var(--bg-warm);
+    transition: var(--theme-transition);
 }
 
 /* Share Grid */
@@ -641,7 +778,7 @@ input, button, textarea {
     padding: var(--space-3);
     border: 1px solid var(--border);
     border-radius: 10px;
-    background: white;
+    background: var(--bg-card);
     cursor: pointer;
     transition: all 0.2s var(--ease);
     color: var(--text-secondary);
@@ -678,6 +815,7 @@ input, button, textarea {
     background: var(--bg);
     min-height: calc(100vh - 65px);
     position: relative;
+    transition: var(--theme-transition);
 }
 
 .preview-stage {
@@ -699,7 +837,7 @@ input, button, textarea {
     height: 40px;
     border-radius: 10px;
     border: 1px solid var(--border);
-    background: white;
+    background: var(--bg-card);
     color: var(--text-muted);
     cursor: pointer;
     display: flex;
@@ -721,7 +859,13 @@ input, button, textarea {
 .control-btn.active {
     background: var(--text);
     border-color: var(--text);
-    color: white;
+    color: var(--bg);
+}
+
+[data-theme="dark"] .control-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #0D0D0F;
 }
 
 .control-divider {

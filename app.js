@@ -26,17 +26,88 @@ class CardCraft {
 
             // View
             isFlipped: false,
-            currentTab: 'content'
+            currentTab: 'content',
+
+            // Theme
+            theme: 'light'
         };
 
         this.init();
     }
 
     init() {
+        this.initTheme();
         this.bindElements();
         this.bindEvents();
         this.loadFromURL();
         this.generateQRCode();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // Theme Management
+    // ═══════════════════════════════════════════════════════════════
+
+    initTheme() {
+        // Prevent flash during initial load
+        document.body.classList.add('no-transition');
+
+        // Check for saved preference
+        const savedTheme = localStorage.getItem('cardcraft-theme');
+
+        if (savedTheme) {
+            this.state.theme = savedTheme;
+        } else {
+            // Check system preference
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            this.state.theme = prefersDark ? 'dark' : 'light';
+        }
+
+        // Apply theme
+        this.applyTheme(false);
+
+        // Re-enable transitions after a frame
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                document.body.classList.remove('no-transition');
+            });
+        });
+
+        // Listen for system theme changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            // Only auto-switch if user hasn't set a preference
+            if (!localStorage.getItem('cardcraft-theme')) {
+                this.state.theme = e.matches ? 'dark' : 'light';
+                this.applyTheme(true);
+            }
+        });
+    }
+
+    toggleTheme() {
+        this.state.theme = this.state.theme === 'light' ? 'dark' : 'light';
+        localStorage.setItem('cardcraft-theme', this.state.theme);
+        this.applyTheme(true);
+    }
+
+    applyTheme(animate = true) {
+        const root = document.documentElement;
+
+        if (!animate) {
+            document.body.classList.add('no-transition');
+        }
+
+        root.setAttribute('data-theme', this.state.theme);
+
+        if (!animate) {
+            requestAnimationFrame(() => {
+                document.body.classList.remove('no-transition');
+            });
+        }
+
+        // Update meta theme-color for mobile browsers
+        const metaTheme = document.querySelector('meta[name="theme-color"]');
+        if (metaTheme) {
+            metaTheme.setAttribute('content', this.state.theme === 'dark' ? '#0D0D0F' : '#FAF9F7');
+        }
     }
 
     bindElements() {
@@ -128,6 +199,9 @@ class CardCraft {
         // Nav actions
         this.previewModeBtn = document.getElementById('previewModeBtn');
         this.exportBtn = document.getElementById('exportBtn');
+
+        // Theme toggle
+        this.themeToggle = document.getElementById('themeToggle');
     }
 
     bindEvents() {
@@ -232,6 +306,11 @@ class CardCraft {
 
         if (this.previewModeBtn) {
             this.previewModeBtn.addEventListener('click', () => this.togglePreviewMode());
+        }
+
+        // Theme toggle
+        if (this.themeToggle) {
+            this.themeToggle.addEventListener('click', () => this.toggleTheme());
         }
     }
 
@@ -794,19 +873,23 @@ class CardCraft {
         const toast = document.createElement('div');
         toast.className = 'toast';
         toast.textContent = message;
+
+        const isDark = this.state.theme === 'dark';
         toast.style.cssText = `
             position: fixed;
             bottom: 24px;
             left: 50%;
             transform: translateX(-50%) translateY(20px);
-            background: #1A1A1A;
-            color: white;
+            background: ${isDark ? '#2C2C30' : '#1A1A1A'};
+            color: ${isDark ? '#F5F5F7' : 'white'};
             padding: 12px 24px;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 0.875rem;
             font-weight: 500;
             z-index: 1000;
             opacity: 0;
+            box-shadow: 0 8px 32px rgba(0,0,0,${isDark ? '0.4' : '0.2'});
+            border: 1px solid ${isDark ? '#3C3C40' : 'transparent'};
             transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         `;
 

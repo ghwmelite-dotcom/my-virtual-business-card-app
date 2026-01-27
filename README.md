@@ -1,0 +1,89 @@
+# CardCraft — Virtual Business Card Studio
+
+A sleek, modern web app for creating and customizing digital business cards with live preview and export functionality.
+
+![CardCraft Preview](https://img.shields.io/badge/Status-Live-brightgreen) ![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white) ![CSS3](https://img.shields.io/badge/CSS3-1572B6?logo=css3&logoColor=white) ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=black)
+
+## Features
+
+### Profile Information
+- Full name, job title, and company
+- Contact details (email, phone, website, location)
+- Social media links (LinkedIn, Twitter/X, Instagram)
+
+### Image Upload
+- Profile photo with drag-and-drop support
+- Company logo upload
+- Real-time preview updates
+
+### Design Customization
+| Style | Description |
+|-------|-------------|
+| **Modern** | Dark background with gradient accent bar |
+| **Classic** | Elegant cream paper aesthetic |
+| **Bold** | Vibrant accent color background |
+| **Minimal** | Clean white with subtle details |
+
+- **Custom Colors**: Pick any primary and accent color
+- **6 Color Presets**: Midnight Rose, Ocean Sunset, Forest Night, Royal Gold, Navy Cream, Ivory Ink
+- **3 Font Options**: Serif (elegant), Sans (modern), Mono (technical)
+
+### Interactive Preview
+- Live updates as you type
+- Click card to flip between front and back
+- 3D hover effects
+- Auto-generated QR code from your website or email
+
+### Export
+- High-resolution PNG download
+- Includes both front and back of the card
+
+## Quick Start
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/ghwmelite-dotcom/my-virtual-business-card-app.git
+   ```
+
+2. Open `index.html` in your browser
+
+3. Start customizing your card!
+
+## Live Demo
+
+Visit the live app: [CardCraft on Cloudflare Pages](https://my-virtual-business-card-app.pages.dev)
+
+## Tech Stack
+
+- **HTML5** — Semantic markup
+- **CSS3** — Custom properties, Grid, Flexbox, animations
+- **Vanilla JavaScript** — No framework dependencies
+- **[QRCode.js](https://github.com/soldair/node-qrcode)** — QR code generation
+- **[html2canvas](https://html2canvas.hertzen.com/)** — Card export functionality
+
+## Project Structure
+
+```
+├── index.html    # Main HTML structure
+├── styles.css    # All styling and animations
+├── app.js        # Application logic
+└── README.md     # Documentation
+```
+
+## Browser Support
+
+- Chrome (recommended)
+- Firefox
+- Safari
+- Edge
+
+## License
+
+MIT License — feel free to use this for personal or commercial projects.
+
+---
+
+<p align="center">
+  <strong>◈ CardCraft</strong><br>
+  <em>Design your digital presence</em>
+</p>

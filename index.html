@@ -206,6 +206,44 @@
                                 </button>
                             </div>
                         </div>
+
+                        <div class="input-group">
+                            <label class="input-label">Card Effects</label>
+                            <div class="effects-toggles">
+                                <label class="effect-toggle">
+                                    <input type="checkbox" id="effectHolo" checked>
+                                    <span class="toggle-slider"></span>
+                                    <span class="toggle-label">
+                                        <span class="toggle-icon">✨</span>
+                                        Holographic
+                                    </span>
+                                </label>
+                                <label class="effect-toggle">
+                                    <input type="checkbox" id="effectParticles" checked>
+                                    <span class="toggle-slider"></span>
+                                    <span class="toggle-label">
+                                        <span class="toggle-icon">🌟</span>
+                                        Particles
+                                    </span>
+                                </label>
+                                <label class="effect-toggle">
+                                    <input type="checkbox" id="effectGlow" checked>
+                                    <span class="toggle-slider"></span>
+                                    <span class="toggle-label">
+                                        <span class="toggle-icon">💫</span>
+                                        Glow
+                                    </span>
+                                </label>
+                                <label class="effect-toggle">
+                                    <input type="checkbox" id="effect3D" checked>
+                                    <span class="toggle-slider"></span>
+                                    <span class="toggle-label">
+                                        <span class="toggle-icon">🎴</span>
+                                        3D Tilt
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
                     </section>
                 </div>
 
@@ -359,8 +397,20 @@
                         </div>
                     </div>
 
-                    <div class="card-wrapper">
+                    <div class="card-wrapper" id="cardWrapper">
+                        <!-- Floating particles background -->
+                        <div class="card-particles" id="cardParticles"></div>
+
+                        <!-- Glow effect -->
+                        <div class="card-glow" id="cardGlow"></div>
+
                         <div class="business-card" id="businessCard">
+                            <!-- Holographic overlay -->
+                            <div class="holo-overlay" id="holoOverlay"></div>
+
+                            <!-- Shine effect -->
+                            <div class="card-shine" id="cardShine"></div>
+
                             <!-- Front of Card -->
                             <div class="card-face card-front" id="cardFront">
                                 <div class="card-inner">

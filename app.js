@@ -6,11 +6,26 @@
 class CardCraft {
     constructor() {
         this.card = document.getElementById('businessCard');
+        this.cardWrapper = document.getElementById('cardWrapper');
         this.currentStyle = 'modern';
         this.currentFont = 'serif';
         this.profileImage = null;
         this.logoImage = null;
         this.cardId = null;
+
+        // Effect states
+        this.effects = {
+            holo: true,
+            particles: true,
+            glow: true,
+            tilt3D: true
+        };
+
+        // Mouse tracking for 3D tilt
+        this.mouseX = 0;
+        this.mouseY = 0;
+        this.cardCenterX = 0;
+        this.cardCenterY = 0;
 
         this.init();
     }
@@ -30,6 +45,12 @@ class CardCraft {
         this.generateQRCode();
         this.loadFromURL();
         this.checkNFCSupport();
+
+        // Initialize card effects
+        this.initCardEffects();
+        this.bindEffectToggles();
+        this.createParticles();
+        this.startEntranceAnimation();
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -860,6 +881,9 @@ END:VCARD`;
     async exportCards() {
         const wasFlipped = this.card.classList.contains('flipped');
 
+        // Disable effects for clean export
+        this.disableEffectsForExport();
+
         const originalTransform = this.card.style.transform;
         this.card.style.transform = 'none';
         this.card.classList.remove('flipped');
@@ -888,6 +912,9 @@ END:VCARD`;
             this.card.classList.remove('flipped');
         }
 
+        // Re-enable effects after export
+        this.enableEffectsAfterExport();
+
         const combinedCanvas = document.createElement('canvas');
         const gap = 60;
         combinedCanvas.width = frontCanvas.width;
@@ -905,6 +932,269 @@ END:VCARD`;
         link.download = `${(data.fullName || 'business-card').replace(/\s+/g, '-').toLowerCase()}.png`;
         link.href = combinedCanvas.toDataURL('image/png');
         link.click();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // Interactive Card Effects
+    // ═══════════════════════════════════════════════════════════════
+
+    initCardEffects() {
+        const cardWrapper = this.cardWrapper;
+        const card = this.card;
+        const holoOverlay = document.getElementById('holoOverlay');
+        const cardShine = document.getElementById('cardShine');
+        const cardGlow = document.getElementById('cardGlow');
+
+        // Track mouse movement for 3D tilt effect
+        cardWrapper.addEventListener('mousemove', (e) => {
+            if (!this.effects.tilt3D) return;
+
+            const rect = card.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            const mouseX = e.clientX - centerX;
+            const mouseY = e.clientY - centerY;
+
+            // Calculate rotation (max 15 degrees)
+            const rotateY = (mouseX / (rect.width / 2)) * 15;
+            const rotateX = -(mouseY / (rect.height / 2)) * 15;
+
+            // Apply transform with smooth transition disabled for responsiveness
+            if (!card.classList.contains('flipped')) {
+                card.style.transform = `rotateY(${rotateY}deg) rotateX(${rotateX}deg)`;
+            } else {
+                card.style.transform = `rotateY(${180 + rotateY}deg) rotateX(${rotateX}deg)`;
+            }
+
+            // Update holographic effect position
+            if (this.effects.holo && holoOverlay) {
+                const percentX = ((e.clientX - rect.left) / rect.width) * 100;
+                const percentY = ((e.clientY - rect.top) / rect.height) * 100;
+                holoOverlay.style.background = `
+                    radial-gradient(
+                        circle at ${percentX}% ${percentY}%,
+                        rgba(255, 0, 128, 0.15) 0%,
+                        rgba(0, 255, 255, 0.1) 25%,
+                        rgba(255, 255, 0, 0.1) 50%,
+                        rgba(128, 0, 255, 0.1) 75%,
+                        transparent 100%
+                    )
+                `;
+                holoOverlay.style.opacity = '1';
+            }
+
+            // Update shine position
+            if (cardShine) {
+                const shineX = ((e.clientX - rect.left) / rect.width) * 100;
+                const shineY = ((e.clientY - rect.top) / rect.height) * 100;
+                cardShine.style.background = `
+                    radial-gradient(
+                        circle at ${shineX}% ${shineY}%,
+                        rgba(255, 255, 255, 0.3) 0%,
+                        rgba(255, 255, 255, 0.1) 20%,
+                        transparent 50%
+                    )
+                `;
+            }
+
+            // Update glow position
+            if (this.effects.glow && cardGlow) {
+                cardGlow.style.transform = `translate(${rotateY * 2}px, ${-rotateX * 2}px) scale(1)`;
+                cardGlow.style.opacity = '0.5';
+            }
+        });
+
+        // Reset on mouse leave
+        cardWrapper.addEventListener('mouseleave', () => {
+            if (!card.classList.contains('flipped')) {
+                card.style.transform = '';
+            } else {
+                card.style.transform = 'rotateY(180deg)';
+            }
+
+            if (holoOverlay) {
+                holoOverlay.style.opacity = '0';
+            }
+
+            if (cardGlow) {
+                cardGlow.style.transform = 'scale(0.8)';
+                cardGlow.style.opacity = '0';
+            }
+        });
+
+        // Touch support for mobile
+        cardWrapper.addEventListener('touchmove', (e) => {
+            if (!this.effects.tilt3D) return;
+            e.preventDefault();
+
+            const touch = e.touches[0];
+            const rect = card.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            const touchX = touch.clientX - centerX;
+            const touchY = touch.clientY - centerY;
+
+            const rotateY = (touchX / (rect.width / 2)) * 10;
+            const rotateX = -(touchY / (rect.height / 2)) * 10;
+
+            if (!card.classList.contains('flipped')) {
+                card.style.transform = `rotateY(${rotateY}deg) rotateX(${rotateX}deg)`;
+            }
+        }, { passive: false });
+
+        cardWrapper.addEventListener('touchend', () => {
+            if (!card.classList.contains('flipped')) {
+                card.style.transform = '';
+            }
+        });
+    }
+
+    bindEffectToggles() {
+        const effectHolo = document.getElementById('effectHolo');
+        const effectParticles = document.getElementById('effectParticles');
+        const effectGlow = document.getElementById('effectGlow');
+        const effect3D = document.getElementById('effect3D');
+
+        const holoOverlay = document.getElementById('holoOverlay');
+        const particlesContainer = document.getElementById('cardParticles');
+        const cardGlow = document.getElementById('cardGlow');
+
+        if (effectHolo) {
+            effectHolo.addEventListener('change', (e) => {
+                this.effects.holo = e.target.checked;
+                if (holoOverlay) {
+                    holoOverlay.style.display = e.target.checked ? 'block' : 'none';
+                }
+            });
+        }
+
+        if (effectParticles) {
+            effectParticles.addEventListener('change', (e) => {
+                this.effects.particles = e.target.checked;
+                if (particlesContainer) {
+                    particlesContainer.style.display = e.target.checked ? 'block' : 'none';
+                }
+            });
+        }
+
+        if (effectGlow) {
+            effectGlow.addEventListener('change', (e) => {
+                this.effects.glow = e.target.checked;
+                if (cardGlow) {
+                    cardGlow.style.display = e.target.checked ? 'block' : 'none';
+                }
+            });
+        }
+
+        if (effect3D) {
+            effect3D.addEventListener('change', (e) => {
+                this.effects.tilt3D = e.target.checked;
+                if (!e.target.checked) {
+                    this.card.style.transform = this.card.classList.contains('flipped') ? 'rotateY(180deg)' : '';
+                }
+            });
+        }
+    }
+
+    createParticles() {
+        const container = document.getElementById('cardParticles');
+        if (!container) return;
+
+        const particleCount = 20;
+
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+
+            // Random position
+            particle.style.left = `${Math.random() * 100}%`;
+            particle.style.top = `${50 + Math.random() * 50}%`;
+
+            // Random size
+            const size = 2 + Math.random() * 4;
+            particle.style.width = `${size}px`;
+            particle.style.height = `${size}px`;
+
+            // Random animation delay and duration
+            particle.style.animationDelay = `${Math.random() * 4}s`;
+            particle.style.animationDuration = `${3 + Math.random() * 3}s`;
+
+            container.appendChild(particle);
+        }
+    }
+
+    startEntranceAnimation() {
+        // Card entrance animation
+        this.card.style.opacity = '0';
+        this.card.style.transform = 'translateY(40px) rotateX(-10deg)';
+
+        setTimeout(() => {
+            this.card.style.transition = 'opacity 0.8s ease, transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)';
+            this.card.style.opacity = '1';
+            this.card.style.transform = 'translateY(0) rotateX(0)';
+
+            // Remove inline styles after animation
+            setTimeout(() => {
+                this.card.style.opacity = '';
+                this.card.style.transition = '';
+            }, 900);
+        }, 300);
+
+        // Staggered animation for card elements
+        const animateElements = [
+            { selector: '.card-header', delay: 400 },
+            { selector: '.card-name', delay: 500 },
+            { selector: '.card-title', delay: 550 },
+            { selector: '.card-company', delay: 600 },
+            { selector: '.card-footer', delay: 700 }
+        ];
+
+        animateElements.forEach(({ selector, delay }) => {
+            const el = this.card.querySelector(selector);
+            if (el) {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(10px)';
+
+                setTimeout(() => {
+                    el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+
+                    setTimeout(() => {
+                        el.style.opacity = '';
+                        el.style.transform = '';
+                        el.style.transition = '';
+                    }, 600);
+                }, delay);
+            }
+        });
+    }
+
+    // Temporarily disable effects for export
+    disableEffectsForExport() {
+        const holoOverlay = document.getElementById('holoOverlay');
+        const cardShine = document.getElementById('cardShine');
+        const cardGlow = document.getElementById('cardGlow');
+        const cardParticles = document.getElementById('cardParticles');
+
+        if (holoOverlay) holoOverlay.style.display = 'none';
+        if (cardShine) cardShine.style.display = 'none';
+        if (cardGlow) cardGlow.style.display = 'none';
+        if (cardParticles) cardParticles.style.display = 'none';
+    }
+
+    enableEffectsAfterExport() {
+        const holoOverlay = document.getElementById('holoOverlay');
+        const cardShine = document.getElementById('cardShine');
+        const cardGlow = document.getElementById('cardGlow');
+        const cardParticles = document.getElementById('cardParticles');
+
+        if (holoOverlay && this.effects.holo) holoOverlay.style.display = 'block';
+        if (cardShine) cardShine.style.display = 'block';
+        if (cardGlow && this.effects.glow) cardGlow.style.display = 'block';
+        if (cardParticles && this.effects.particles) cardParticles.style.display = 'block';
     }
 }
 

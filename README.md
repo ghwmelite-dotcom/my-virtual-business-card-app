@@ -31,8 +31,19 @@ A sleek, modern web app for creating and customizing digital business cards with
 ### Interactive Preview
 - Live updates as you type
 - Click card to flip between front and back
-- 3D hover effects
 - Auto-generated QR code from your website or email
+
+### Interactive & Animated Effects
+| Effect | Description |
+|--------|-------------|
+| **Holographic Shimmer** | Tilt-reactive rainbow overlay like premium credit cards |
+| **Dynamic Shine** | Light reflection that follows your cursor |
+| **Ambient Glow** | Soft accent-colored glow around the card |
+| **Floating Particles** | Subtle animated particles in the background |
+| **3D Tilt** | Up to 15° rotation based on mouse position |
+| **Entrance Animation** | Staggered reveal animation on page load |
+
+All effects can be toggled on/off in the Design section. Touch support included for mobile devices.
 
 ### Sharing & Connectivity
 | Feature | Description |

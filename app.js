@@ -29,9 +29,21 @@ class CardCraft {
             currentTab: 'content',
 
             // Theme
-            theme: 'light'
+            theme: 'light',
+
+            // AI Features
+            suggestedColors: [],
+            currentLogoSVG: null,
+            logoGeneratorSettings: {
+                style: 'circle',
+                bgColor: '#B87333',
+                textColor: '#FFFFFF',
+                initials: 'JC'
+            },
+            isEnhancingPhoto: false
         };
 
+        this.colorThief = null;
         this.init();
     }
 
@@ -202,6 +214,33 @@ class CardCraft {
 
         // Theme toggle
         this.themeToggle = document.getElementById('themeToggle');
+
+        // AI Feature Elements
+        // Smart Color Extraction
+        this.suggestedColorsSection = document.getElementById('suggestedColorsSection');
+        this.suggestedColorsRow = document.getElementById('suggestedColorsRow');
+
+        // Logo Generator Modal
+        this.logoGeneratorModal = document.getElementById('logoGeneratorModal');
+        this.generateLogoBtn = document.getElementById('generateLogoBtn');
+        this.logoModalClose = document.getElementById('logoModalClose');
+        this.logoModalCancel = document.getElementById('logoModalCancel');
+        this.useGeneratedLogoBtn = document.getElementById('useGeneratedLogo');
+        this.logoStyleOptions = document.querySelectorAll('.logo-style-option');
+        this.logoBgColorInput = document.getElementById('logoBgColor');
+        this.logoTextColorInput = document.getElementById('logoTextColor');
+        this.logoBgColorValue = document.getElementById('logoBgColorValue');
+        this.logoTextColorValue = document.getElementById('logoTextColorValue');
+        this.logoInitialsInput = document.getElementById('logoInitials');
+        this.generatedLogoPreview = document.getElementById('generatedLogoPreview');
+
+        // AI Headshot Enhancement
+        this.aiEnhanceBtn = document.getElementById('aiEnhanceBtn');
+
+        // AI Tagline Generator
+        this.industrySelect = document.getElementById('industrySelect');
+        this.generateTaglineBtn = document.getElementById('generateTaglineBtn');
+        this.taglineResults = document.getElementById('taglineResults');
     }
 
     bindEvents() {
@@ -311,6 +350,93 @@ class CardCraft {
         // Theme toggle
         if (this.themeToggle) {
             this.themeToggle.addEventListener('click', () => this.toggleTheme());
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // AI Feature Event Listeners
+        // ═══════════════════════════════════════════════════════════════
+
+        // Logo Generator Modal
+        if (this.generateLogoBtn) {
+            this.generateLogoBtn.addEventListener('click', () => this.openLogoGenerator());
+        }
+
+        if (this.logoModalClose) {
+            this.logoModalClose.addEventListener('click', () => this.closeLogoGenerator());
+        }
+
+        if (this.logoModalCancel) {
+            this.logoModalCancel.addEventListener('click', () => this.closeLogoGenerator());
+        }
+
+        if (this.logoGeneratorModal) {
+            this.logoGeneratorModal.addEventListener('click', (e) => {
+                if (e.target === this.logoGeneratorModal) {
+                    this.closeLogoGenerator();
+                }
+            });
+        }
+
+        if (this.useGeneratedLogoBtn) {
+            this.useGeneratedLogoBtn.addEventListener('click', () => this.useGeneratedLogo());
+        }
+
+        // Logo style options
+        this.logoStyleOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                this.logoStyleOptions.forEach(o => o.classList.remove('active'));
+                option.classList.add('active');
+                this.state.logoGeneratorSettings.style = option.dataset.logoStyle;
+                this.updateLogoGeneratorPreview();
+            });
+        });
+
+        // Logo color inputs
+        if (this.logoBgColorInput) {
+            this.logoBgColorInput.addEventListener('input', (e) => {
+                this.state.logoGeneratorSettings.bgColor = e.target.value;
+                if (this.logoBgColorValue) {
+                    this.logoBgColorValue.textContent = e.target.value.toUpperCase();
+                }
+                this.updateLogoGeneratorPreview();
+            });
+        }
+
+        if (this.logoTextColorInput) {
+            this.logoTextColorInput.addEventListener('input', (e) => {
+                this.state.logoGeneratorSettings.textColor = e.target.value;
+                if (this.logoTextColorValue) {
+                    this.logoTextColorValue.textContent = e.target.value.toUpperCase();
+                }
+                this.updateLogoGeneratorPreview();
+            });
+        }
+
+        // Logo initials input
+        if (this.logoInitialsInput) {
+            this.logoInitialsInput.addEventListener('input', (e) => {
+                this.state.logoGeneratorSettings.initials = e.target.value.toUpperCase();
+                this.updateLogoGeneratorPreview();
+            });
+        }
+
+        // AI Headshot Enhancement
+        if (this.aiEnhanceBtn) {
+            this.aiEnhanceBtn.addEventListener('click', () => this.enhanceHeadshot());
+        }
+
+        // AI Tagline Generator
+        if (this.industrySelect) {
+            this.industrySelect.addEventListener('change', () => this.updateTaglineButtonState());
+        }
+
+        // Also update tagline button when job title changes
+        if (this.inputs.jobTitle) {
+            this.inputs.jobTitle.addEventListener('input', () => this.updateTaglineButtonState());
+        }
+
+        if (this.generateTaglineBtn) {
+            this.generateTaglineBtn.addEventListener('click', () => this.generateTaglines());
         }
     }
 
@@ -447,10 +573,19 @@ class CardCraft {
                 this.state.profilePhoto = dataUrl;
                 this.updatePhotoPreview(dataUrl);
                 this.updateCardPhoto(dataUrl);
+
+                // Enable AI Enhance button
+                if (this.aiEnhanceBtn) {
+                    this.aiEnhanceBtn.disabled = false;
+                    this.aiEnhanceBtn.title = 'Remove background from photo';
+                }
             } else {
                 this.state.companyLogo = dataUrl;
                 this.updateLogoPreview(dataUrl);
                 this.updateCardLogo(dataUrl);
+
+                // Extract colors from logo for AI color suggestions
+                this.extractColorsFromLogo(dataUrl);
             }
         };
         reader.readAsDataURL(file);
@@ -858,6 +993,578 @@ class CardCraft {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // AI Feature 1: Smart Color Extraction
+    // ═══════════════════════════════════════════════════════════════
+
+    rgbToHex(r, g, b) {
+        return '#' + [r, g, b].map(x => {
+            const hex = x.toString(16);
+            return hex.length === 1 ? '0' + hex : hex;
+        }).join('');
+    }
+
+    extractColorsFromLogo(imageDataUrl) {
+        // Initialize Color Thief if not already done
+        if (!this.colorThief && typeof ColorThief !== 'undefined') {
+            this.colorThief = new ColorThief();
+        }
+
+        if (!this.colorThief) {
+            console.log('Color Thief library not loaded');
+            return;
+        }
+
+        const img = new Image();
+        img.crossOrigin = 'Anonymous';
+
+        img.onload = () => {
+            try {
+                // Get palette of 6 colors
+                const palette = this.colorThief.getPalette(img, 6);
+
+                if (palette && palette.length > 0) {
+                    this.state.suggestedColors = palette.map(rgb => this.rgbToHex(rgb[0], rgb[1], rgb[2]));
+                    this.displaySuggestedColors();
+                }
+            } catch (e) {
+                console.log('Error extracting colors:', e);
+            }
+        };
+
+        img.src = imageDataUrl;
+    }
+
+    displaySuggestedColors() {
+        if (!this.suggestedColorsSection || !this.suggestedColorsRow) return;
+
+        // Show the section
+        this.suggestedColorsSection.style.display = 'block';
+
+        // Clear existing colors
+        this.suggestedColorsRow.innerHTML = '';
+
+        // Add color swatches
+        this.state.suggestedColors.forEach(color => {
+            const swatch = document.createElement('button');
+            swatch.className = 'suggested-color-swatch';
+            swatch.style.cssText = `
+                width: 36px;
+                height: 36px;
+                border-radius: 50%;
+                border: 2px solid transparent;
+                background-color: ${color};
+                cursor: pointer;
+                transition: all 0.2s ease;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            `;
+            swatch.dataset.color = color;
+            swatch.title = color;
+
+            swatch.addEventListener('click', () => {
+                // Remove active state from all suggested swatches
+                this.suggestedColorsRow.querySelectorAll('.suggested-color-swatch').forEach(s => {
+                    s.style.borderColor = 'transparent';
+                    s.style.transform = 'scale(1)';
+                });
+                // Remove active from preset swatches
+                this.colorSwatches.forEach(s => s.classList.remove('active'));
+
+                // Add active state
+                swatch.style.borderColor = this.state.theme === 'dark' ? '#fff' : '#1A1A1A';
+                swatch.style.transform = 'scale(1.1)';
+
+                // Apply the color
+                this.setAccentColor(color, null);
+            });
+
+            swatch.addEventListener('mouseenter', () => {
+                if (swatch.style.borderColor === 'transparent') {
+                    swatch.style.transform = 'scale(1.05)';
+                }
+            });
+
+            swatch.addEventListener('mouseleave', () => {
+                if (swatch.style.borderColor === 'transparent') {
+                    swatch.style.transform = 'scale(1)';
+                }
+            });
+
+            this.suggestedColorsRow.appendChild(swatch);
+        });
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // AI Feature 2: Logo Generator
+    // ═══════════════════════════════════════════════════════════════
+
+    openLogoGenerator() {
+        if (!this.logoGeneratorModal) return;
+
+        // Auto-fill initials from company name if available
+        if (this.state.company) {
+            const initials = this.getInitials(this.state.company);
+            this.state.logoGeneratorSettings.initials = initials;
+            if (this.logoInitialsInput) {
+                this.logoInitialsInput.value = initials;
+            }
+        }
+
+        // Sync colors with current accent color
+        this.state.logoGeneratorSettings.bgColor = this.state.accentColor;
+        if (this.logoBgColorInput) {
+            this.logoBgColorInput.value = this.state.accentColor;
+        }
+        if (this.logoBgColorValue) {
+            this.logoBgColorValue.textContent = this.state.accentColor.toUpperCase();
+        }
+
+        this.updateLogoGeneratorPreview();
+        this.logoGeneratorModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    closeLogoGenerator() {
+        if (!this.logoGeneratorModal) return;
+        this.logoGeneratorModal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    getInitials(text) {
+        if (!text) return 'AB';
+        const words = text.trim().split(/\s+/);
+        if (words.length === 1) {
+            return words[0].substring(0, 2).toUpperCase();
+        }
+        return (words[0][0] + words[1][0]).toUpperCase();
+    }
+
+    generateLogoSVG() {
+        const { style, bgColor, textColor, initials } = this.state.logoGeneratorSettings;
+        const displayInitials = initials || 'AB';
+        const size = 100;
+
+        let shapeSVG = '';
+        let textY = '53';
+
+        switch (style) {
+            case 'circle':
+                shapeSVG = `<circle cx="50" cy="50" r="48" fill="${bgColor}"/>`;
+                break;
+            case 'square':
+                shapeSVG = `<rect x="2" y="2" width="96" height="96" fill="${bgColor}"/>`;
+                break;
+            case 'rounded':
+                shapeSVG = `<rect x="2" y="2" width="96" height="96" rx="16" fill="${bgColor}"/>`;
+                break;
+            case 'minimal':
+                // No background, just text with underline accent
+                shapeSVG = `<line x1="20" y1="70" x2="80" y2="70" stroke="${bgColor}" stroke-width="4" stroke-linecap="round"/>`;
+                textY = '58';
+                break;
+        }
+
+        const textColor2 = style === 'minimal' ? bgColor : textColor;
+        const fontSize = displayInitials.length === 1 ? 48 : 36;
+
+        const svg = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">
+                ${shapeSVG}
+                <text x="50" y="${textY}"
+                    font-family="'Satoshi', 'SF Pro Display', -apple-system, sans-serif"
+                    font-size="${fontSize}"
+                    font-weight="600"
+                    fill="${textColor2}"
+                    text-anchor="middle"
+                    dominant-baseline="middle">${displayInitials}</text>
+            </svg>
+        `;
+
+        this.state.currentLogoSVG = svg;
+        return svg;
+    }
+
+    updateLogoGeneratorPreview() {
+        if (!this.generatedLogoPreview) return;
+
+        const { style, bgColor, textColor, initials } = this.state.logoGeneratorSettings;
+        const displayInitials = initials || 'AB';
+
+        // Update preview styling based on style
+        this.generatedLogoPreview.innerHTML = '';
+
+        const previewInitials = document.createElement('span');
+        previewInitials.className = 'logo-preview-initials';
+        previewInitials.textContent = displayInitials;
+
+        // Reset styles
+        this.generatedLogoPreview.style.cssText = `
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Satoshi', sans-serif;
+            font-weight: 600;
+            font-size: ${displayInitials.length === 1 ? '36px' : '28px'};
+            transition: all 0.3s ease;
+        `;
+
+        switch (style) {
+            case 'circle':
+                this.generatedLogoPreview.style.borderRadius = '50%';
+                this.generatedLogoPreview.style.backgroundColor = bgColor;
+                previewInitials.style.color = textColor;
+                break;
+            case 'square':
+                this.generatedLogoPreview.style.borderRadius = '0';
+                this.generatedLogoPreview.style.backgroundColor = bgColor;
+                previewInitials.style.color = textColor;
+                break;
+            case 'rounded':
+                this.generatedLogoPreview.style.borderRadius = '16px';
+                this.generatedLogoPreview.style.backgroundColor = bgColor;
+                previewInitials.style.color = textColor;
+                break;
+            case 'minimal':
+                this.generatedLogoPreview.style.borderRadius = '0';
+                this.generatedLogoPreview.style.backgroundColor = 'transparent';
+                this.generatedLogoPreview.style.borderBottom = `4px solid ${bgColor}`;
+                previewInitials.style.color = bgColor;
+                break;
+        }
+
+        this.generatedLogoPreview.appendChild(previewInitials);
+    }
+
+    svgToDataURL(svgString) {
+        const encoded = encodeURIComponent(svgString)
+            .replace(/'/g, '%27')
+            .replace(/"/g, '%22');
+        return `data:image/svg+xml,${encoded}`;
+    }
+
+    useGeneratedLogo() {
+        const svg = this.generateLogoSVG();
+        const dataUrl = this.svgToDataURL(svg);
+
+        // Update state and previews
+        this.state.companyLogo = dataUrl;
+        this.updateLogoPreview(dataUrl);
+        this.updateCardLogo(dataUrl);
+
+        // Close modal
+        this.closeLogoGenerator();
+        this.showToast('Logo applied!');
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // AI Feature 3: Headshot Enhancement (Background Removal)
+    // ═══════════════════════════════════════════════════════════════
+
+    async enhanceHeadshot() {
+        if (!this.state.profilePhoto) {
+            this.showToast('Please upload a photo first');
+            return;
+        }
+
+        if (this.state.isEnhancingPhoto) {
+            return;
+        }
+
+        // Check if library is loaded
+        if (typeof imglyRemoveBackground === 'undefined') {
+            this.showToast('Enhancement library not loaded');
+            return;
+        }
+
+        this.state.isEnhancingPhoto = true;
+
+        // Update button to show processing state
+        if (this.aiEnhanceBtn) {
+            this.aiEnhanceBtn.disabled = true;
+            this.aiEnhanceBtn.innerHTML = `
+                <span class="btn-spinner-inline"></span>
+                <span>Processing...</span>
+            `;
+            this.aiEnhanceBtn.style.cssText = `
+                opacity: 0.7;
+                cursor: wait;
+            `;
+        }
+
+        try {
+            // Convert data URL to blob for the library
+            const response = await fetch(this.state.profilePhoto);
+            const blob = await response.blob();
+
+            // Remove background using imgly
+            const resultBlob = await imglyRemoveBackground(blob, {
+                progress: (key, current, total) => {
+                    // Could show progress here if needed
+                    console.log(`Processing: ${key} - ${current}/${total}`);
+                }
+            });
+
+            // Convert result blob to data URL
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const enhancedDataUrl = e.target.result;
+
+                // Update state and previews
+                this.state.profilePhoto = enhancedDataUrl;
+                this.updatePhotoPreview(enhancedDataUrl);
+                this.updateCardPhoto(enhancedDataUrl);
+
+                this.showToast('Photo enhanced!');
+                this.resetEnhanceButton();
+            };
+            reader.readAsDataURL(resultBlob);
+
+        } catch (error) {
+            console.error('Enhancement error:', error);
+            this.showToast('Enhancement failed. Try a different photo.');
+            this.resetEnhanceButton();
+        }
+    }
+
+    resetEnhanceButton() {
+        this.state.isEnhancingPhoto = false;
+
+        if (this.aiEnhanceBtn) {
+            this.aiEnhanceBtn.disabled = !this.state.profilePhoto;
+            this.aiEnhanceBtn.innerHTML = `
+                <svg class="ai-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M10 2l1.5 3.5L15 7l-3.5 1.5L10 12l-1.5-3.5L5 7l3.5-1.5L10 2z"/>
+                    <path d="M15 12l1 2 2 1-2 1-1 2-1-2-2-1 2-1 1-2z"/>
+                    <path d="M5 14l.5 1.5L7 16l-1.5.5L5 18l-.5-1.5L3 16l1.5-.5L5 14z"/>
+                </svg>
+                <span>AI Enhance</span>
+            `;
+            this.aiEnhanceBtn.style.cssText = '';
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // AI Feature 4: Tagline Generator
+    // ═══════════════════════════════════════════════════════════════
+
+    updateTaglineButtonState() {
+        if (!this.generateTaglineBtn) return;
+
+        const hasTitle = this.state.jobTitle && this.state.jobTitle.trim().length > 0;
+        const hasIndustry = this.industrySelect && this.industrySelect.value;
+
+        this.generateTaglineBtn.disabled = !(hasTitle && hasIndustry);
+    }
+
+    async generateTaglines() {
+        const title = this.state.jobTitle;
+        const industry = this.industrySelect ? this.industrySelect.value : '';
+
+        if (!title || !industry) {
+            this.showToast('Please enter a job title and select an industry');
+            return;
+        }
+
+        // Show loading state
+        if (this.generateTaglineBtn) {
+            this.generateTaglineBtn.classList.add('loading');
+            this.generateTaglineBtn.disabled = true;
+        }
+
+        // Show skeleton loading in results
+        this.showTaglineSkeletons();
+
+        try {
+            // Call Cloudflare AI API
+            const response = await fetch('/api/generate-tagline', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    jobTitle: title,
+                    industry: industry,
+                    tone: 'professional'
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('API request failed');
+            }
+
+            const data = await response.json();
+
+            if (data.success && data.taglines && data.taglines.length > 0) {
+                this.displayTaglines(data.taglines);
+            } else {
+                // Fallback to template-based if AI fails
+                const fallbackTaglines = this.createFallbackTaglines(title, industry);
+                this.displayTaglines(fallbackTaglines);
+            }
+        } catch (error) {
+            console.error('AI Tagline Error:', error);
+            // Fallback to template-based generation
+            const fallbackTaglines = this.createFallbackTaglines(title, industry);
+            this.displayTaglines(fallbackTaglines);
+        } finally {
+            if (this.generateTaglineBtn) {
+                this.generateTaglineBtn.classList.remove('loading');
+                this.generateTaglineBtn.disabled = false;
+            }
+        }
+    }
+
+    showTaglineSkeletons() {
+        if (!this.taglineResults) return;
+
+        this.taglineResults.innerHTML = '';
+        this.taglineResults.style.display = 'block';
+
+        for (let i = 0; i < 4; i++) {
+            const skeleton = document.createElement('div');
+            skeleton.className = 'tagline-skeleton';
+            skeleton.style.cssText = `
+                height: 44px;
+                background: linear-gradient(90deg,
+                    ${this.state.theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)'} 25%,
+                    ${this.state.theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)'} 50%,
+                    ${this.state.theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)'} 75%
+                );
+                background-size: 200% 100%;
+                animation: shimmer 1.5s infinite;
+                border-radius: 8px;
+                margin-bottom: 8px;
+            `;
+            this.taglineResults.appendChild(skeleton);
+        }
+
+        // Add shimmer animation if not present
+        if (!document.getElementById('shimmer-animation')) {
+            const style = document.createElement('style');
+            style.id = 'shimmer-animation';
+            style.textContent = `
+                @keyframes shimmer {
+                    0% { background-position: 200% 0; }
+                    100% { background-position: -200% 0; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+    }
+
+    createFallbackTaglines(title, industry) {
+        // Fallback template-based taglines when AI is unavailable
+        const industryTerms = {
+            technology: ['innovation', 'digital transformation', 'tech solutions', 'the digital age'],
+            finance: ['financial growth', 'wealth management', 'fiscal excellence', 'financial futures'],
+            healthcare: ['patient care', 'health outcomes', 'medical excellence', 'healthcare innovation'],
+            marketing: ['brand growth', 'market impact', 'audience engagement', 'brand storytelling'],
+            design: ['creative solutions', 'visual excellence', 'design thinking', 'aesthetic innovation'],
+            education: ['learning outcomes', 'educational excellence', 'student success', 'knowledge sharing'],
+            legal: ['legal excellence', 'justice', 'legal solutions', 'client advocacy'],
+            other: ['excellence', 'success', 'innovation', 'growth']
+        };
+
+        const terms = industryTerms[industry] || industryTerms.other;
+        const industryCapitalized = industry.charAt(0).toUpperCase() + industry.slice(1);
+
+        const templates = [
+            `${title} | Transforming ${terms[0]}`,
+            `Innovative ${title} | ${industryCapitalized} Expert`,
+            `${title} driving ${terms[1]}`,
+            `${title} | Building the future of ${industryCapitalized.toLowerCase()}`
+        ];
+
+        return templates;
+    }
+
+    displayTaglines(taglines) {
+        if (!this.taglineResults) return;
+
+        this.taglineResults.innerHTML = '';
+        this.taglineResults.style.display = 'block';
+
+        taglines.forEach((tagline, index) => {
+            const card = document.createElement('div');
+            card.className = 'tagline-card';
+            card.style.cssText = `
+                padding: 12px 16px;
+                background: ${this.state.theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)'};
+                border: 1px solid ${this.state.theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'};
+                border-radius: 8px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                margin-bottom: 8px;
+                font-size: 0.875rem;
+                color: ${this.state.theme === 'dark' ? '#E5E5E7' : '#1A1A1A'};
+                animation: fadeInUp 0.3s ease forwards;
+                animation-delay: ${index * 0.1}s;
+                opacity: 0;
+            `;
+
+            card.textContent = tagline;
+
+            card.addEventListener('mouseenter', () => {
+                card.style.background = this.state.theme === 'dark'
+                    ? 'rgba(255,255,255,0.1)'
+                    : 'rgba(0,0,0,0.05)';
+                card.style.borderColor = this.state.accentColor;
+            });
+
+            card.addEventListener('mouseleave', () => {
+                card.style.background = this.state.theme === 'dark'
+                    ? 'rgba(255,255,255,0.05)'
+                    : 'rgba(0,0,0,0.02)';
+                card.style.borderColor = this.state.theme === 'dark'
+                    ? 'rgba(255,255,255,0.1)'
+                    : 'rgba(0,0,0,0.08)';
+            });
+
+            card.addEventListener('click', () => {
+                this.copyTagline(tagline, card);
+            });
+
+            this.taglineResults.appendChild(card);
+        });
+
+        // Add animation keyframes if not already present
+        if (!document.getElementById('tagline-animations')) {
+            const style = document.createElement('style');
+            style.id = 'tagline-animations';
+            style.textContent = `
+                @keyframes fadeInUp {
+                    from {
+                        opacity: 0;
+                        transform: translateY(10px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+    }
+
+    copyTagline(tagline, cardElement) {
+        navigator.clipboard.writeText(tagline).then(() => {
+            // Visual feedback
+            const originalBg = cardElement.style.background;
+            cardElement.style.background = this.state.accentColor;
+            cardElement.style.color = '#fff';
+
+            setTimeout(() => {
+                cardElement.style.background = originalBg;
+                cardElement.style.color = this.state.theme === 'dark' ? '#E5E5E7' : '#1A1A1A';
+            }, 300);
+
+            this.showToast('Tagline copied!');
+        });
     }
 
     // ═══════════════════════════════════════════════════════════════

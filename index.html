@@ -71,25 +71,43 @@
                         <!-- Photo Upload -->
                         <div class="form-section">
                             <div class="upload-row">
-                                <div class="upload-box" id="photoUpload">
-                                    <input type="file" id="photoInput" accept="image/*" hidden>
-                                    <div class="upload-preview" id="photoPreview">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                            <circle cx="12" cy="8" r="4"/>
-                                            <path d="M4 20c0-4 4-6 8-6s8 2 8 6"/>
-                                        </svg>
+                                <div class="upload-box-wrapper">
+                                    <div class="upload-box" id="photoUpload">
+                                        <input type="file" id="photoInput" accept="image/*" hidden>
+                                        <div class="upload-preview" id="photoPreview">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                                <circle cx="12" cy="8" r="4"/>
+                                                <path d="M4 20c0-4 4-6 8-6s8 2 8 6"/>
+                                            </svg>
+                                        </div>
+                                        <span class="upload-label">Photo</span>
                                     </div>
-                                    <span class="upload-label">Photo</span>
+                                    <button class="btn-ai btn-ai-enhance" id="aiEnhanceBtn" disabled title="Upload a photo first">
+                                        <svg class="ai-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+                                            <path d="M10 2l1.5 3.5L15 7l-3.5 1.5L10 12l-1.5-3.5L5 7l3.5-1.5L10 2z"/>
+                                            <path d="M15 12l1 2 2 1-2 1-1 2-1-2-2-1 2-1 1-2z"/>
+                                            <path d="M5 14l.5 1.5L7 16l-1.5.5L5 18l-.5-1.5L3 16l1.5-.5L5 14z"/>
+                                        </svg>
+                                        <span>AI Enhance</span>
+                                    </button>
                                 </div>
-                                <div class="upload-box" id="logoUpload">
-                                    <input type="file" id="logoInput" accept="image/*" hidden>
-                                    <div class="upload-preview" id="logoPreview">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                            <rect x="4" y="4" width="16" height="16" rx="2"/>
-                                            <path d="M9 12h6M12 9v6"/>
-                                        </svg>
+                                <div class="upload-box-wrapper">
+                                    <div class="upload-box" id="logoUpload">
+                                        <input type="file" id="logoInput" accept="image/*" hidden>
+                                        <div class="upload-preview" id="logoPreview">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                                <rect x="4" y="4" width="16" height="16" rx="2"/>
+                                                <path d="M9 12h6M12 9v6"/>
+                                            </svg>
+                                        </div>
+                                        <span class="upload-label">Logo</span>
                                     </div>
-                                    <span class="upload-label">Logo</span>
+                                    <button class="btn-ai-link" id="generateLogoBtn">
+                                        <svg class="ai-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+                                            <path d="M10 2l1.5 3.5L15 7l-3.5 1.5L10 12l-1.5-3.5L5 7l3.5-1.5L10 2z"/>
+                                        </svg>
+                                        <span>Generate Logo</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -110,6 +128,45 @@
                                     <label>Company</label>
                                     <input type="text" id="company" placeholder="Acme Inc">
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- AI Tagline Generator -->
+                        <div class="form-section">
+                            <h3 class="form-title">
+                                <svg class="ai-icon-inline" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M10 2l1.5 3.5L15 7l-3.5 1.5L10 12l-1.5-3.5L5 7l3.5-1.5L10 2z"/>
+                                </svg>
+                                AI Tagline
+                            </h3>
+                            <div class="form-grid">
+                                <div class="form-field">
+                                    <label for="industrySelect">Industry</label>
+                                    <select id="industrySelect" class="form-select">
+                                        <option value="">Select industry...</option>
+                                        <option value="technology">Technology</option>
+                                        <option value="finance">Finance</option>
+                                        <option value="healthcare">Healthcare</option>
+                                        <option value="marketing">Marketing</option>
+                                        <option value="design">Design</option>
+                                        <option value="education">Education</option>
+                                        <option value="legal">Legal</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="form-field">
+                                    <label>&nbsp;</label>
+                                    <button class="btn btn-ai-generate" id="generateTaglineBtn" disabled>
+                                        <svg class="ai-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+                                            <path d="M10 2l1.5 3.5L15 7l-3.5 1.5L10 12l-1.5-3.5L5 7l3.5-1.5L10 2z"/>
+                                        </svg>
+                                        <span>Generate Tagline</span>
+                                        <span class="btn-spinner"></span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="tagline-results" id="taglineResults">
+                                <!-- Generated taglines will appear here -->
                             </div>
                         </div>
 
@@ -173,6 +230,21 @@
                                     <div class="style-preview minimal"></div>
                                     <span>Minimal</span>
                                 </button>
+                            </div>
+                        </div>
+
+                        <!-- AI Suggested Colors (shown after logo upload) -->
+                        <div class="form-section suggested-colors-section" id="suggestedColorsSection" style="display: none;">
+                            <h3 class="form-title">
+                                <svg class="ai-icon-inline" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M10 2l1.5 3.5L15 7l-3.5 1.5L10 12l-1.5-3.5L5 7l3.5-1.5L10 2z"/>
+                                </svg>
+                                Suggested Colors
+                                <span class="ai-badge">AI</span>
+                            </h3>
+                            <p class="suggested-colors-hint">Colors extracted from your logo</p>
+                            <div class="suggested-colors-row" id="suggestedColorsRow">
+                                <!-- AI-extracted colors will be inserted here -->
                             </div>
                         </div>
 
@@ -403,8 +475,105 @@
         </main>
     </div>
 
+    <!-- Logo Generator Modal -->
+    <div class="modal-overlay" id="logoGeneratorModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">
+                    <svg class="ai-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M10 2l1.5 3.5L15 7l-3.5 1.5L10 12l-1.5-3.5L5 7l3.5-1.5L10 2z"/>
+                    </svg>
+                    Generate Logo
+                </h2>
+                <button class="modal-close" id="logoModalClose">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="logo-generator-grid">
+                    <!-- Style Selector -->
+                    <div class="logo-gen-section">
+                        <label class="logo-gen-label">Logo Style</label>
+                        <div class="logo-style-options">
+                            <label class="logo-style-option active" data-logo-style="circle">
+                                <input type="radio" name="logoStyle" value="circle" checked>
+                                <div class="logo-style-preview circle"></div>
+                                <span>Circle</span>
+                            </label>
+                            <label class="logo-style-option" data-logo-style="square">
+                                <input type="radio" name="logoStyle" value="square">
+                                <div class="logo-style-preview square"></div>
+                                <span>Square</span>
+                            </label>
+                            <label class="logo-style-option" data-logo-style="rounded">
+                                <input type="radio" name="logoStyle" value="rounded">
+                                <div class="logo-style-preview rounded"></div>
+                                <span>Rounded</span>
+                            </label>
+                            <label class="logo-style-option" data-logo-style="minimal">
+                                <input type="radio" name="logoStyle" value="minimal">
+                                <div class="logo-style-preview minimal"></div>
+                                <span>Minimal</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Color Pickers -->
+                    <div class="logo-gen-section">
+                        <label class="logo-gen-label">Colors</label>
+                        <div class="logo-color-pickers">
+                            <div class="logo-color-picker">
+                                <label for="logoBgColor">Background</label>
+                                <div class="color-input-wrapper">
+                                    <input type="color" id="logoBgColor" value="#B87333">
+                                    <span class="color-value" id="logoBgColorValue">#B87333</span>
+                                </div>
+                            </div>
+                            <div class="logo-color-picker">
+                                <label for="logoTextColor">Text/Icon</label>
+                                <div class="color-input-wrapper">
+                                    <input type="color" id="logoTextColor" value="#FFFFFF">
+                                    <span class="color-value" id="logoTextColorValue">#FFFFFF</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Initials Input -->
+                    <div class="logo-gen-section">
+                        <label class="logo-gen-label">Initials (max 2 characters)</label>
+                        <input type="text" id="logoInitials" class="logo-initials-input" maxlength="2" placeholder="JC">
+                    </div>
+                </div>
+
+                <!-- Preview Area -->
+                <div class="logo-preview-area">
+                    <label class="logo-gen-label">Preview</label>
+                    <div class="logo-preview-container">
+                        <div class="logo-preview" id="generatedLogoPreview">
+                            <span class="logo-preview-initials">JC</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="logoModalCancel">Cancel</button>
+                <button class="btn btn-primary btn-ai-accent" id="useGeneratedLogo">
+                    <svg class="ai-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M5 13l4 4L19 7"/>
+                    </svg>
+                    Use This Logo
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.4.0/color-thief.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/index.browser.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

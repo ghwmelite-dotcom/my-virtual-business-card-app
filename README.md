@@ -34,9 +34,22 @@ A sleek, modern web app for creating and customizing digital business cards with
 - 3D hover effects
 - Auto-generated QR code from your website or email
 
+### Sharing & Connectivity
+| Feature | Description |
+|---------|-------------|
+| **Unique Card URL** | Generate shareable links that encode your card data |
+| **vCard Download** | One-click "Add to Contacts" with .vcf file export |
+| **NFC Tap-to-Share** | Share via NFC on supported Android devices |
+| **WhatsApp Share** | Send card directly via WhatsApp with pre-filled message |
+| **SMS Share** | Quick SMS sharing with card link |
+| **Email Share** | Professional email template with your card info |
+| **Native Share** | Use system share dialog on mobile devices |
+| **Apple/Google Wallet** | Wallet integration with vCard fallback |
+
 ### Export
-- High-resolution PNG download
-- Includes both front and back of the card
+- High-resolution PNG download (front + back)
+- vCard (.vcf) for direct contact import
+- Shareable URL with encoded card data
 
 ## Quick Start
 
@@ -60,6 +73,9 @@ Visit the live app: [CardCraft on Cloudflare Pages](https://my-virtual-business-
 - **Vanilla JavaScript** — No framework dependencies
 - **[QRCode.js](https://github.com/soldair/node-qrcode)** — QR code generation
 - **[html2canvas](https://html2canvas.hertzen.com/)** — Card export functionality
+- **Web Share API** — Native system sharing on mobile
+- **Web NFC API** — NFC tap-to-share on Android
+- **vCard 3.0** — Standard contact file format
 
 ## Project Structure
 

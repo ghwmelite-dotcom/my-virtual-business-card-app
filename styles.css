@@ -2729,6 +2729,27 @@ input, button, textarea {
     background: #2a2a2a;
 }
 
+.btn-wallet:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.btn-wallet .btn-spinner-inline {
+    border-color: rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+}
+
+.btn-wallet.google .btn-spinner-inline {
+    border-color: rgba(0, 0, 0, 0.2);
+    border-top-color: #333;
+}
+
+[data-theme="dark"] .btn-wallet.google .btn-spinner-inline {
+    border-color: rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+}
+
 /* ═══════════════════════════════════════════════════════════════
    Video Elements
    ═══════════════════════════════════════════════════════════════ */

@@ -13,11 +13,11 @@ export async function onRequestPost(context) {
     };
 
     try {
-        const { fullName, jobTitle, company, industry, tone = 'professional' } = await request.json();
+        const { name, title, company, tone = 'professional' } = await request.json();
 
-        if (!jobTitle || !industry) {
+        if (!name || !title) {
             return new Response(JSON.stringify({
-                error: 'Missing required fields: jobTitle and industry'
+                error: 'Missing required fields: name and title'
             }), { status: 400, headers: corsHeaders });
         }
 
@@ -29,10 +29,9 @@ export async function onRequestPost(context) {
 
         const toneDesc = toneDescriptions[tone] || toneDescriptions.professional;
 
-        const nameContext = fullName ? `for ${fullName}` : '';
         const companyContext = company ? ` at ${company}` : '';
 
-        const prompt = `Write a ${toneDesc} professional bio ${nameContext} who is a ${jobTitle}${companyContext} in the ${industry} industry.
+        const prompt = `Write a ${toneDesc} professional bio for ${name} who is a ${title}${companyContext}.
 
 Requirements:
 - Keep it to 2-3 sentences (max 150 words)

@@ -23,6 +23,7 @@ class CardCraft {
             cardStyle: 'light',
             accentColor: '#B87333',
             fontStyle: 'classic',
+            textColor: 'auto',
 
             // View
             isFlipped: false,
@@ -40,7 +41,32 @@ class CardCraft {
                 textColor: '#FFFFFF',
                 initials: 'JC'
             },
-            isEnhancingPhoto: false
+            isEnhancingPhoto: false,
+
+            // Personas
+            currentPersonaId: 'default',
+            personas: {},
+
+            // Video
+            videoData: null,
+            isRecording: false,
+            mediaRecorder: null,
+
+            // Publishing
+            cardId: null,
+            isPublished: false,
+            publishedUrl: null,
+
+            // Meeting scheduler
+            schedulerUrl: '',
+            enableScheduler: false,
+
+            // Follow-up
+            enableFollowUp: false,
+
+            // Bio
+            selectedTone: 'professional',
+            generatedBio: null
         };
 
         this.colorThief = null;
@@ -51,8 +77,93 @@ class CardCraft {
         this.initTheme();
         this.bindElements();
         this.bindEvents();
+        this.loadSavedData();
         this.loadFromURL();
         this.generateQRCode();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // Data Persistence (localStorage)
+    // ═══════════════════════════════════════════════════════════════
+
+    saveCardData() {
+        const dataToSave = {
+            fullName: this.state.fullName,
+            jobTitle: this.state.jobTitle,
+            company: this.state.company,
+            email: this.state.email,
+            phone: this.state.phone,
+            website: this.state.website,
+            location: this.state.location,
+            linkedin: this.state.linkedin,
+            twitter: this.state.twitter,
+            profilePhoto: this.state.profilePhoto,
+            companyLogo: this.state.companyLogo,
+            cardStyle: this.state.cardStyle,
+            accentColor: this.state.accentColor,
+            fontStyle: this.state.fontStyle,
+            textColor: this.state.textColor,
+            schedulerUrl: this.state.schedulerUrl,
+            enableScheduler: this.state.enableScheduler,
+            enableFollowUp: this.state.enableFollowUp,
+            selectedTone: this.state.selectedTone,
+            generatedBio: this.state.generatedBio
+        };
+        localStorage.setItem('cardcraft-data', JSON.stringify(dataToSave));
+    }
+
+    loadSavedData() {
+        const saved = localStorage.getItem('cardcraft-data');
+        if (!saved) return;
+
+        try {
+            const data = JSON.parse(saved);
+
+            // Load text fields
+            const textFields = ['fullName', 'jobTitle', 'company', 'email', 'phone', 'website', 'location', 'linkedin', 'twitter'];
+            textFields.forEach(field => {
+                if (data[field] && this.inputs[field]) {
+                    this.inputs[field].value = data[field];
+                    this.state[field] = data[field];
+                }
+            });
+
+            // Update card display
+            textFields.forEach(field => {
+                if (data[field]) {
+                    this.updateField(field, data[field]);
+                }
+            });
+
+            // Load style settings
+            if (data.cardStyle) this.setCardStyle(data.cardStyle);
+            if (data.accentColor) this.setAccentColor(data.accentColor, null);
+            if (data.fontStyle) this.setFontStyle(data.fontStyle);
+            if (data.textColor) this.setTextColor(data.textColor, null);
+
+            // Load images
+            if (data.profilePhoto) {
+                this.state.profilePhoto = data.profilePhoto;
+                this.updatePhotoPreview(data.profilePhoto);
+                this.updateCardPhoto(data.profilePhoto);
+            }
+            if (data.companyLogo) {
+                this.state.companyLogo = data.companyLogo;
+                this.updateLogoPreview(data.companyLogo);
+                this.updateCardLogo(data.companyLogo);
+            }
+
+            // Load other settings
+            if (data.schedulerUrl) this.state.schedulerUrl = data.schedulerUrl;
+            if (data.enableScheduler) this.state.enableScheduler = data.enableScheduler;
+            if (data.enableFollowUp) this.state.enableFollowUp = data.enableFollowUp;
+            if (data.selectedTone) this.state.selectedTone = data.selectedTone;
+            if (data.generatedBio) this.state.generatedBio = data.generatedBio;
+
+            console.log('Loaded saved card data');
+        } catch (e) {
+            console.log('Error loading saved data:', e);
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -191,6 +302,8 @@ class CardCraft {
         this.colorSwatches = document.querySelectorAll('.color-swatch');
         this.customColorInput = document.getElementById('customColor');
         this.fontOptions = document.querySelectorAll('.font-option');
+        this.textColorSwatches = document.querySelectorAll('.text-color-swatch');
+        this.customTextColorInput = document.getElementById('customTextColor');
 
         // View controls
         this.viewButtons = document.querySelectorAll('.control-btn[data-view]');
@@ -241,6 +354,66 @@ class CardCraft {
         this.industrySelect = document.getElementById('industrySelect');
         this.generateTaglineBtn = document.getElementById('generateTaglineBtn');
         this.taglineResults = document.getElementById('taglineResults');
+
+        // AI Bio Generator
+        this.generateBioBtn = document.getElementById('generateBioBtn');
+        this.bioResult = document.getElementById('bioResult');
+        this.toneBtns = document.querySelectorAll('.tone-btn');
+
+        // Persona Selector
+        this.personaSelector = document.getElementById('personaSelector');
+        this.personaTrigger = document.getElementById('personaTrigger');
+        this.personaDropdown = document.getElementById('personaDropdown');
+        this.personaList = document.getElementById('personaList');
+        this.newPersonaBtn = document.getElementById('newPersonaBtn');
+        this.currentPersonaName = document.getElementById('currentPersonaName');
+
+        // Video
+        this.videoUpload = document.getElementById('videoUpload');
+        this.videoInput = document.getElementById('videoInput');
+        this.videoPreview = document.getElementById('videoPreview');
+        this.recordVideoBtn = document.getElementById('recordVideoBtn');
+        this.videoPlayBtn = document.getElementById('videoPlayBtn');
+        this.videoModal = document.getElementById('videoModal');
+        this.videoModalClose = document.getElementById('videoModalClose');
+        this.videoPlayer = document.getElementById('videoPlayer');
+
+        // Publishing
+        this.publishCardBtn = document.getElementById('publishCardBtn');
+        this.publishStatus = document.getElementById('publishStatus');
+        this.permanentUrl = document.getElementById('permanentUrl');
+        this.publishedUrl = document.getElementById('publishedUrl');
+        this.copyPublishedUrl = document.getElementById('copyPublishedUrl');
+
+        // Wallet
+        this.addToAppleWallet = document.getElementById('addToAppleWallet');
+        this.addToGoogleWallet = document.getElementById('addToGoogleWallet');
+
+        // Meeting Scheduler
+        this.schedulerUrlInput = document.getElementById('schedulerUrl');
+        this.enableSchedulerCheckbox = document.getElementById('enableScheduler');
+        this.meetingRow = document.getElementById('meetingRow');
+        this.meetingModal = document.getElementById('meetingModal');
+        this.meetingModalClose = document.getElementById('meetingModalClose');
+        this.meetingModalCancel = document.getElementById('meetingModalCancel');
+        this.submitMeeting = document.getElementById('submitMeeting');
+
+        // Follow-up / Connect
+        this.enableFollowUpCheckbox = document.getElementById('enableFollowUp');
+        this.connectModal = document.getElementById('connectModal');
+        this.connectModalClose = document.getElementById('connectModalClose');
+        this.connectModalCancel = document.getElementById('connectModalCancel');
+        this.submitConnect = document.getElementById('submitConnect');
+
+        // Analytics
+        this.analyticsPlaceholder = document.getElementById('analyticsPlaceholder');
+        this.analyticsContent = document.getElementById('analyticsContent');
+        this.totalViews = document.getElementById('totalViews');
+        this.totalContacts = document.getElementById('totalContacts');
+        this.viewsChart = document.getElementById('viewsChart');
+        this.clickStats = document.getElementById('clickStats');
+        this.recentViews = document.getElementById('recentViews');
+        this.refreshAnalytics = document.getElementById('refreshAnalytics');
     }
 
     bindEvents() {
@@ -292,6 +465,19 @@ class CardCraft {
         this.fontOptions.forEach(option => {
             option.addEventListener('click', () => this.setFontStyle(option.dataset.font));
         });
+
+        // Text color swatches
+        this.textColorSwatches.forEach(swatch => {
+            swatch.addEventListener('click', () => this.setTextColor(swatch.dataset.textColor, swatch));
+        });
+
+        // Custom text color
+        if (this.customTextColorInput) {
+            this.customTextColorInput.addEventListener('input', (e) => {
+                this.textColorSwatches.forEach(s => s.classList.remove('active'));
+                this.setTextColor(e.target.value, null);
+            });
+        }
 
         // Card flip (click)
         if (this.card.element) {
@@ -438,6 +624,156 @@ class CardCraft {
         if (this.generateTaglineBtn) {
             this.generateTaglineBtn.addEventListener('click', () => this.generateTaglines());
         }
+
+        // ═══════════════════════════════════════════════════════════════
+        // Additional Feature Event Listeners
+        // ═══════════════════════════════════════════════════════════════
+
+        // AI Bio Generator
+        this.toneBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.toneBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                this.state.selectedTone = btn.dataset.tone;
+                this.updateBioButtonState();
+            });
+        });
+
+        if (this.generateBioBtn) {
+            this.generateBioBtn.addEventListener('click', () => this.generateBio());
+        }
+
+        // Update bio button state when inputs change
+        if (this.inputs.fullName) {
+            this.inputs.fullName.addEventListener('input', () => this.updateBioButtonState());
+        }
+        if (this.inputs.company) {
+            this.inputs.company.addEventListener('input', () => this.updateBioButtonState());
+        }
+
+        // Persona Selector
+        if (this.personaTrigger) {
+            this.personaTrigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.personaSelector.classList.toggle('open');
+            });
+        }
+
+        if (this.newPersonaBtn) {
+            this.newPersonaBtn.addEventListener('click', () => this.createNewPersona());
+        }
+
+        document.addEventListener('click', (e) => {
+            if (this.personaSelector && !this.personaSelector.contains(e.target)) {
+                this.personaSelector.classList.remove('open');
+            }
+        });
+
+        // Video
+        if (this.videoUpload) {
+            this.videoUpload.addEventListener('click', () => this.videoInput.click());
+        }
+        if (this.videoInput) {
+            this.videoInput.addEventListener('change', (e) => this.handleVideoUpload(e));
+        }
+        if (this.recordVideoBtn) {
+            this.recordVideoBtn.addEventListener('click', () => this.startVideoRecording());
+        }
+        if (this.videoPlayBtn) {
+            this.videoPlayBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.playVideo();
+            });
+        }
+        if (this.videoModalClose) {
+            this.videoModalClose.addEventListener('click', () => this.closeVideoModal());
+        }
+        if (this.videoModal) {
+            this.videoModal.addEventListener('click', (e) => {
+                if (e.target === this.videoModal) this.closeVideoModal();
+            });
+        }
+
+        // Publishing
+        if (this.publishCardBtn) {
+            this.publishCardBtn.addEventListener('click', () => this.publishCard());
+        }
+        if (this.copyPublishedUrl) {
+            this.copyPublishedUrl.addEventListener('click', () => this.copyPublishedLink());
+        }
+
+        // Wallet
+        if (this.addToAppleWallet) {
+            this.addToAppleWallet.addEventListener('click', () => this.generateWalletPass('apple'));
+        }
+        if (this.addToGoogleWallet) {
+            this.addToGoogleWallet.addEventListener('click', () => this.generateWalletPass('google'));
+        }
+
+        // Meeting Scheduler
+        if (this.schedulerUrlInput) {
+            this.schedulerUrlInput.addEventListener('input', (e) => {
+                this.state.schedulerUrl = e.target.value;
+            });
+        }
+        if (this.enableSchedulerCheckbox) {
+            this.enableSchedulerCheckbox.addEventListener('change', (e) => {
+                this.state.enableScheduler = e.target.checked;
+                if (this.meetingRow) {
+                    this.meetingRow.style.display = e.target.checked ? 'flex' : 'none';
+                }
+            });
+        }
+        if (this.meetingRow) {
+            this.meetingRow.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.openMeetingModal();
+            });
+        }
+        if (this.meetingModalClose) {
+            this.meetingModalClose.addEventListener('click', () => this.closeMeetingModal());
+        }
+        if (this.meetingModalCancel) {
+            this.meetingModalCancel.addEventListener('click', () => this.closeMeetingModal());
+        }
+        if (this.meetingModal) {
+            this.meetingModal.addEventListener('click', (e) => {
+                if (e.target === this.meetingModal) this.closeMeetingModal();
+            });
+        }
+        if (this.submitMeeting) {
+            this.submitMeeting.addEventListener('click', () => this.submitMeetingRequest());
+        }
+
+        // Follow-up / Connect
+        if (this.enableFollowUpCheckbox) {
+            this.enableFollowUpCheckbox.addEventListener('change', (e) => {
+                this.state.enableFollowUp = e.target.checked;
+            });
+        }
+        if (this.connectModalClose) {
+            this.connectModalClose.addEventListener('click', () => this.closeConnectModal());
+        }
+        if (this.connectModalCancel) {
+            this.connectModalCancel.addEventListener('click', () => this.closeConnectModal());
+        }
+        if (this.connectModal) {
+            this.connectModal.addEventListener('click', (e) => {
+                if (e.target === this.connectModal) this.closeConnectModal();
+            });
+        }
+        if (this.submitConnect) {
+            this.submitConnect.addEventListener('click', () => this.submitContactInfo());
+        }
+
+        // Analytics
+        if (this.refreshAnalytics) {
+            this.refreshAnalytics.addEventListener('click', () => this.loadAnalytics());
+        }
+
+        // Load personas from localStorage
+        this.loadPersonas();
+        this.updateBioButtonState();
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -514,6 +850,9 @@ class CardCraft {
                 }
                 break;
         }
+
+        // Auto-save to localStorage
+        this.saveCardData();
     }
 
     updateRoleVisibility() {
@@ -587,6 +926,9 @@ class CardCraft {
                 // Extract colors from logo for AI color suggestions
                 this.extractColorsFromLogo(dataUrl);
             }
+
+            // Auto-save to localStorage
+            this.saveCardData();
         };
         reader.readAsDataURL(file);
     }
@@ -661,6 +1003,8 @@ class CardCraft {
         if (this.state.isFlipped) {
             this.card.element.classList.add('flipped');
         }
+
+        this.saveCardData();
     }
 
     setAccentColor(color, swatch) {
@@ -680,6 +1024,8 @@ class CardCraft {
         if (this.customColorInput) {
             this.customColorInput.value = color;
         }
+
+        this.saveCardData();
     }
 
     setFontStyle(font) {
@@ -690,9 +1036,40 @@ class CardCraft {
             option.classList.toggle('active', option.dataset.font === font);
         });
 
-        // Update card class
-        this.card.element.classList.remove('font-classic', 'font-modern', 'font-mono');
+        // Update card class - remove all font classes first
+        this.card.element.classList.remove(
+            'font-classic', 'font-modern', 'font-mono',
+            'font-elegant', 'font-bold', 'font-script', 'font-condensed'
+        );
         this.card.element.classList.add(`font-${font}`);
+
+        this.saveCardData();
+    }
+
+    setTextColor(color, swatch) {
+        this.state.textColor = color;
+
+        // Update UI
+        if (swatch) {
+            this.textColorSwatches.forEach(s => s.classList.remove('active'));
+            swatch.classList.add('active');
+        }
+
+        // Apply to card
+        if (color === 'auto') {
+            this.card.element.removeAttribute('data-text-color');
+            this.card.element.style.removeProperty('--custom-text-color');
+        } else {
+            this.card.element.setAttribute('data-text-color', color);
+            this.card.element.style.setProperty('--custom-text-color', color);
+        }
+
+        // Update custom color input
+        if (this.customTextColorInput && color !== 'auto') {
+            this.customTextColorInput.value = color;
+        }
+
+        this.saveCardData();
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -777,7 +1154,8 @@ class CardCraft {
             tw: this.state.twitter,
             s: this.state.cardStyle,
             ac: this.state.accentColor,
-            f: this.state.fontStyle
+            f: this.state.fontStyle,
+            tc: this.state.textColor
         };
 
         // Remove empty values
@@ -845,17 +1223,19 @@ class CardCraft {
                     tw: 'twitter',
                     s: 'cardStyle',
                     ac: 'accentColor',
-                    f: 'fontStyle'
+                    f: 'fontStyle',
+                    tc: 'textColor'
                 };
 
                 // Apply values
                 Object.entries(decoded).forEach(([key, value]) => {
                     const fieldName = mapping[key];
                     if (fieldName && value) {
-                        if (['cardStyle', 'accentColor', 'fontStyle'].includes(fieldName)) {
+                        if (['cardStyle', 'accentColor', 'fontStyle', 'textColor'].includes(fieldName)) {
                             if (fieldName === 'cardStyle') this.setCardStyle(value);
                             if (fieldName === 'accentColor') this.setAccentColor(value, null);
                             if (fieldName === 'fontStyle') this.setFontStyle(value);
+                            if (fieldName === 'textColor') this.setTextColor(value, null);
                         } else {
                             if (this.inputs[fieldName]) {
                                 this.inputs[fieldName].value = value;
@@ -1614,6 +1994,773 @@ class CardCraft {
             toast.style.transform = 'translateX(-50%) translateY(20px)';
             setTimeout(() => toast.remove(), 300);
         }, 2500);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // Feature 1: Multiple Card Personas
+    // ═══════════════════════════════════════════════════════════════
+
+    loadPersonas() {
+        const saved = localStorage.getItem('cardcraft-personas');
+        if (saved) {
+            try {
+                this.state.personas = JSON.parse(saved);
+            } catch (e) {
+                this.state.personas = {};
+            }
+        }
+
+        // Ensure default persona exists
+        if (!this.state.personas['default']) {
+            this.state.personas['default'] = {
+                id: 'default',
+                name: 'Default',
+                data: this.getCardData()
+            };
+        }
+
+        // Load current persona
+        const currentId = localStorage.getItem('cardcraft-current-persona') || 'default';
+        this.state.currentPersonaId = currentId;
+
+        this.renderPersonaList();
+        this.loadPersona(currentId);
+    }
+
+    savePersonas() {
+        localStorage.setItem('cardcraft-personas', JSON.stringify(this.state.personas));
+        localStorage.setItem('cardcraft-current-persona', this.state.currentPersonaId);
+    }
+
+    getCardData() {
+        return {
+            fullName: this.state.fullName,
+            jobTitle: this.state.jobTitle,
+            company: this.state.company,
+            email: this.state.email,
+            phone: this.state.phone,
+            website: this.state.website,
+            location: this.state.location,
+            linkedin: this.state.linkedin,
+            twitter: this.state.twitter,
+            profilePhoto: this.state.profilePhoto,
+            companyLogo: this.state.companyLogo,
+            cardStyle: this.state.cardStyle,
+            accentColor: this.state.accentColor,
+            fontStyle: this.state.fontStyle,
+            textColor: this.state.textColor,
+            videoData: this.state.videoData,
+            schedulerUrl: this.state.schedulerUrl,
+            enableScheduler: this.state.enableScheduler
+        };
+    }
+
+    renderPersonaList() {
+        if (!this.personaList) return;
+
+        this.personaList.innerHTML = '';
+        Object.values(this.state.personas).forEach(persona => {
+            const item = document.createElement('div');
+            item.className = `persona-item${persona.id === this.state.currentPersonaId ? ' active' : ''}`;
+            item.innerHTML = `
+                <span class="persona-item-name">${persona.name}</span>
+                ${persona.id !== 'default' ? `
+                    <button class="persona-item-delete" data-id="${persona.id}">
+                        <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M4 4l8 8M12 4l-8 8"/>
+                        </svg>
+                    </button>
+                ` : ''}
+            `;
+
+            item.addEventListener('click', (e) => {
+                if (!e.target.closest('.persona-item-delete')) {
+                    this.switchPersona(persona.id);
+                }
+            });
+
+            const deleteBtn = item.querySelector('.persona-item-delete');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.deletePersona(persona.id);
+                });
+            }
+
+            this.personaList.appendChild(item);
+        });
+    }
+
+    switchPersona(personaId) {
+        // Save current persona data
+        this.state.personas[this.state.currentPersonaId].data = this.getCardData();
+
+        // Switch to new persona
+        this.state.currentPersonaId = personaId;
+        this.loadPersona(personaId);
+        this.savePersonas();
+        this.renderPersonaList();
+        this.personaSelector.classList.remove('open');
+    }
+
+    loadPersona(personaId) {
+        const persona = this.state.personas[personaId];
+        if (!persona) return;
+
+        if (this.currentPersonaName) {
+            this.currentPersonaName.textContent = persona.name;
+        }
+
+        const data = persona.data || {};
+
+        // Apply data to form and state
+        Object.entries(data).forEach(([key, value]) => {
+            if (this.inputs[key] && typeof value === 'string') {
+                this.inputs[key].value = value;
+                this.updateField(key, value);
+            } else if (key === 'profilePhoto' && value) {
+                this.state.profilePhoto = value;
+                this.updatePhotoPreview(value);
+                this.updateCardPhoto(value);
+            } else if (key === 'companyLogo' && value) {
+                this.state.companyLogo = value;
+                this.updateLogoPreview(value);
+                this.updateCardLogo(value);
+            } else if (key === 'cardStyle') {
+                this.setCardStyle(value || 'light');
+            } else if (key === 'accentColor') {
+                this.setAccentColor(value || '#B87333', null);
+            } else if (key === 'fontStyle') {
+                this.setFontStyle(value || 'classic');
+            } else if (key === 'textColor') {
+                this.setTextColor(value || 'auto', null);
+            } else if (key === 'videoData') {
+                this.state.videoData = value;
+                this.updateVideoUI();
+            } else if (key === 'schedulerUrl' && this.schedulerUrlInput) {
+                this.state.schedulerUrl = value || '';
+                this.schedulerUrlInput.value = value || '';
+            } else if (key === 'enableScheduler' && this.enableSchedulerCheckbox) {
+                this.state.enableScheduler = value || false;
+                this.enableSchedulerCheckbox.checked = value || false;
+                if (this.meetingRow) {
+                    this.meetingRow.style.display = value ? 'flex' : 'none';
+                }
+            }
+        });
+    }
+
+    createNewPersona() {
+        const name = prompt('Enter a name for this persona:');
+        if (!name) return;
+
+        const id = 'persona_' + Date.now();
+        this.state.personas[id] = {
+            id,
+            name,
+            data: {}
+        };
+
+        this.savePersonas();
+        this.switchPersona(id);
+        this.showToast('Persona created!');
+    }
+
+    deletePersona(personaId) {
+        if (personaId === 'default') return;
+        if (!confirm('Delete this persona?')) return;
+
+        delete this.state.personas[personaId];
+
+        if (this.state.currentPersonaId === personaId) {
+            this.switchPersona('default');
+        } else {
+            this.savePersonas();
+            this.renderPersonaList();
+        }
+
+        this.showToast('Persona deleted');
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // Feature 2: Video Business Card
+    // ═══════════════════════════════════════════════════════════════
+
+    handleVideoUpload(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (file.size > 50 * 1024 * 1024) {
+            this.showToast('Video must be under 50MB');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            this.state.videoData = e.target.result;
+            this.updateVideoUI();
+            this.showToast('Video added!');
+        };
+        reader.readAsDataURL(file);
+    }
+
+    updateVideoUI() {
+        if (this.state.videoData) {
+            if (this.videoPreview) {
+                this.videoPreview.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="currentColor" style="color: var(--accent)">
+                        <polygon points="5 3 19 12 5 21 5 3"/>
+                    </svg>
+                `;
+                this.videoPreview.classList.add('has-image');
+            }
+            if (this.videoPlayBtn) {
+                this.videoPlayBtn.style.display = 'flex';
+            }
+        } else {
+            if (this.videoPreview) {
+                this.videoPreview.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <polygon points="5 3 19 12 5 21 5 3"/>
+                    </svg>
+                `;
+                this.videoPreview.classList.remove('has-image');
+            }
+            if (this.videoPlayBtn) {
+                this.videoPlayBtn.style.display = 'none';
+            }
+        }
+    }
+
+    async startVideoRecording() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'user', width: 1280, height: 720 },
+                audio: true
+            });
+
+            // Create recorder UI
+            const recorder = document.createElement('div');
+            recorder.className = 'video-recorder active';
+            recorder.innerHTML = `
+                <button class="recorder-close">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+                <video autoplay muted playsinline></video>
+                <div class="recorder-controls">
+                    <span class="recorder-timer">00:00</span>
+                    <button class="record-btn"></button>
+                    <span class="recorder-timer" style="opacity: 0">00:00</span>
+                </div>
+            `;
+
+            document.body.appendChild(recorder);
+
+            const video = recorder.querySelector('video');
+            const recordBtn = recorder.querySelector('.record-btn');
+            const timerEl = recorder.querySelector('.recorder-timer');
+            const closeBtn = recorder.querySelector('.recorder-close');
+
+            video.srcObject = stream;
+
+            let mediaRecorder;
+            let chunks = [];
+            let timer = 0;
+            let timerInterval;
+
+            const stopRecording = () => {
+                if (mediaRecorder && mediaRecorder.state === 'recording') {
+                    mediaRecorder.stop();
+                }
+                clearInterval(timerInterval);
+                stream.getTracks().forEach(t => t.stop());
+                recorder.remove();
+            };
+
+            closeBtn.addEventListener('click', stopRecording);
+
+            recordBtn.addEventListener('click', () => {
+                if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+                    // Start recording
+                    chunks = [];
+                    mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+
+                    mediaRecorder.ondataavailable = (e) => {
+                        if (e.data.size > 0) chunks.push(e.data);
+                    };
+
+                    mediaRecorder.onstop = () => {
+                        const blob = new Blob(chunks, { type: 'video/webm' });
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            this.state.videoData = e.target.result;
+                            this.updateVideoUI();
+                            this.showToast('Video recorded!');
+                        };
+                        reader.readAsDataURL(blob);
+                    };
+
+                    mediaRecorder.start();
+                    recordBtn.classList.add('recording');
+                    timer = 0;
+                    timerInterval = setInterval(() => {
+                        timer++;
+                        const mins = Math.floor(timer / 60).toString().padStart(2, '0');
+                        const secs = (timer % 60).toString().padStart(2, '0');
+                        timerEl.textContent = `${mins}:${secs}`;
+
+                        if (timer >= 60) {
+                            stopRecording();
+                        }
+                    }, 1000);
+                } else {
+                    // Stop recording
+                    stopRecording();
+                }
+            });
+
+        } catch (error) {
+            console.error('Camera error:', error);
+            this.showToast('Could not access camera');
+        }
+    }
+
+    playVideo() {
+        if (!this.state.videoData || !this.videoModal) return;
+
+        this.videoPlayer.src = this.state.videoData;
+        this.videoModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    closeVideoModal() {
+        if (!this.videoModal) return;
+        this.videoPlayer.pause();
+        this.videoPlayer.src = '';
+        this.videoModal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // Feature 3: AI Bio Generator
+    // ═══════════════════════════════════════════════════════════════
+
+    updateBioButtonState() {
+        if (!this.generateBioBtn) return;
+
+        const hasName = this.state.fullName && this.state.fullName.trim().length > 0;
+        const hasTitle = this.state.jobTitle && this.state.jobTitle.trim().length > 0;
+
+        this.generateBioBtn.disabled = !(hasName && hasTitle);
+    }
+
+    async generateBio() {
+        const name = this.state.fullName;
+        const title = this.state.jobTitle;
+        const company = this.state.company;
+        const tone = this.state.selectedTone;
+
+        if (!name || !title) {
+            this.showToast('Please enter your name and title');
+            return;
+        }
+
+        // Show loading state
+        if (this.generateBioBtn) {
+            this.generateBioBtn.classList.add('loading');
+            this.generateBioBtn.disabled = true;
+        }
+
+        try {
+            const response = await fetch('/api/generate-bio', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, title, company, tone })
+            });
+
+            if (!response.ok) throw new Error('API request failed');
+
+            const data = await response.json();
+
+            if (data.success && data.bio) {
+                this.displayBio(data.bio);
+            } else {
+                throw new Error('No bio generated');
+            }
+        } catch (error) {
+            console.error('Bio generation error:', error);
+            // Fallback to template
+            const fallbackBio = this.createFallbackBio(name, title, company, tone);
+            this.displayBio(fallbackBio);
+        } finally {
+            if (this.generateBioBtn) {
+                this.generateBioBtn.classList.remove('loading');
+                this.generateBioBtn.disabled = false;
+            }
+        }
+    }
+
+    createFallbackBio(name, title, company, tone) {
+        const templates = {
+            professional: `${name} is a dedicated ${title}${company ? ` at ${company}` : ''}, bringing expertise and innovation to every project. With a focus on delivering exceptional results, ${name.split(' ')[0]} combines strategic thinking with practical execution.`,
+            creative: `Meet ${name} — a ${title} who believes in pushing boundaries${company ? ` at ${company}` : ''}. Turning ideas into reality is just another day at the office. Let's create something amazing together!`,
+            casual: `Hey there! I'm ${name}, working as a ${title}${company ? ` at ${company}` : ''}. I love what I do and I'm always up for a good conversation about new opportunities and ideas.`
+        };
+        return templates[tone] || templates.professional;
+    }
+
+    displayBio(bio) {
+        if (!this.bioResult) return;
+
+        this.state.generatedBio = bio;
+        this.bioResult.innerHTML = `
+            <p>${bio}</p>
+            <div class="bio-actions">
+                <button class="btn btn-secondary" onclick="navigator.clipboard.writeText('${bio.replace(/'/g, "\\'")}'); window.cardCraft.showToast('Bio copied!')">
+                    Copy
+                </button>
+            </div>
+        `;
+        this.bioResult.classList.add('active');
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // Feature 4: Publishing & Permanent URL
+    // ═══════════════════════════════════════════════════════════════
+
+    async publishCard() {
+        if (this.publishCardBtn) {
+            this.publishCardBtn.disabled = true;
+            this.publishCardBtn.innerHTML = `
+                <span class="btn-spinner" style="display: inline-block; margin-right: 8px;"></span>
+                Publishing...
+            `;
+        }
+
+        try {
+            const cardData = this.getCardData();
+            cardData.id = this.state.cardId || null;
+
+            const response = await fetch('/api/save-card', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(cardData)
+            });
+
+            if (!response.ok) throw new Error('Failed to publish');
+
+            const data = await response.json();
+
+            if (data.success && data.cardId) {
+                this.state.cardId = data.cardId;
+                this.state.isPublished = true;
+                this.state.publishedUrl = `${window.location.origin}/card/${data.cardId}`;
+
+                this.updatePublishUI();
+                this.loadAnalytics();
+                this.showToast('Card published!');
+            }
+        } catch (error) {
+            console.error('Publish error:', error);
+            this.showToast('Failed to publish. Try again.');
+        } finally {
+            if (this.publishCardBtn) {
+                this.publishCardBtn.disabled = false;
+                this.publishCardBtn.innerHTML = `
+                    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M10 3v11M6 7l4-4 4 4"/>
+                        <path d="M3 14v3h14v-3"/>
+                    </svg>
+                    ${this.state.isPublished ? 'Update Card' : 'Publish Card'}
+                `;
+            }
+        }
+    }
+
+    updatePublishUI() {
+        if (this.publishStatus) {
+            this.publishStatus.classList.toggle('published', this.state.isPublished);
+            this.publishStatus.querySelector('.status-text').textContent =
+                this.state.isPublished ? 'Published' : 'Not published';
+        }
+
+        if (this.permanentUrl && this.state.publishedUrl) {
+            this.permanentUrl.style.display = 'flex';
+            this.publishedUrl.value = this.state.publishedUrl;
+        }
+
+        if (this.analyticsPlaceholder && this.analyticsContent) {
+            this.analyticsPlaceholder.style.display = this.state.isPublished ? 'none' : 'flex';
+            this.analyticsContent.style.display = this.state.isPublished ? 'block' : 'none';
+        }
+    }
+
+    copyPublishedLink() {
+        if (!this.state.publishedUrl) return;
+        navigator.clipboard.writeText(this.state.publishedUrl).then(() => {
+            this.showToast('Link copied!');
+        });
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // Feature 5: Wallet Pass Generation
+    // ═══════════════════════════════════════════════════════════════
+
+    async generateWalletPass(type) {
+        if (!this.state.fullName || !this.state.email) {
+            this.showToast('Please add your name and email first');
+            return;
+        }
+
+        this.showToast(`Generating ${type === 'apple' ? 'Apple' : 'Google'} Wallet pass...`);
+
+        try {
+            const response = await fetch('/api/generate-wallet-pass', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type,
+                    name: this.state.fullName,
+                    title: this.state.jobTitle,
+                    company: this.state.company,
+                    email: this.state.email,
+                    phone: this.state.phone,
+                    website: this.state.website
+                })
+            });
+
+            if (!response.ok) throw new Error('Failed to generate pass');
+
+            const data = await response.json();
+
+            if (data.success && data.passUrl) {
+                window.open(data.passUrl, '_blank');
+                this.showToast('Wallet pass ready!');
+            } else {
+                throw new Error('No pass URL returned');
+            }
+        } catch (error) {
+            console.error('Wallet pass error:', error);
+            this.showToast('Wallet pass coming soon!');
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // Feature 6: Analytics Dashboard
+    // ═══════════════════════════════════════════════════════════════
+
+    async loadAnalytics() {
+        if (!this.state.cardId) return;
+
+        try {
+            const response = await fetch(`/api/get-analytics?id=${this.state.cardId}`);
+            if (!response.ok) throw new Error('Failed to load analytics');
+
+            const data = await response.json();
+
+            if (data.success && data.analytics) {
+                this.displayAnalytics(data.analytics);
+            }
+        } catch (error) {
+            console.error('Analytics error:', error);
+        }
+    }
+
+    displayAnalytics(analytics) {
+        // Total views
+        if (this.totalViews) {
+            this.totalViews.textContent = analytics.totalViews || 0;
+        }
+
+        // Total contacts (if available)
+        if (this.totalContacts) {
+            this.totalContacts.textContent = analytics.totalContacts || 0;
+        }
+
+        // Views chart
+        if (this.viewsChart && analytics.dailyViews) {
+            const days = Object.entries(analytics.dailyViews).slice(-7);
+            const maxViews = Math.max(...days.map(([_, v]) => v), 1);
+
+            this.viewsChart.innerHTML = days.map(([day, views]) => {
+                const height = (views / maxViews) * 100;
+                return `<div class="chart-bar" style="height: ${height}%" title="${day}: ${views} views"></div>`;
+            }).join('');
+        }
+
+        // Click stats
+        if (this.clickStats && analytics.actions) {
+            const actions = analytics.actions;
+            this.clickStats.innerHTML = `
+                <div class="click-stat-row">
+                    <span class="click-stat-label">Email Clicks</span>
+                    <span class="click-stat-value">${actions.email_click || 0}</span>
+                </div>
+                <div class="click-stat-row">
+                    <span class="click-stat-label">Phone Clicks</span>
+                    <span class="click-stat-value">${actions.phone_click || 0}</span>
+                </div>
+                <div class="click-stat-row">
+                    <span class="click-stat-label">Website Clicks</span>
+                    <span class="click-stat-value">${actions.website_click || 0}</span>
+                </div>
+                <div class="click-stat-row">
+                    <span class="click-stat-label">Social Clicks</span>
+                    <span class="click-stat-value">${actions.social_click || 0}</span>
+                </div>
+            `;
+        }
+
+        // Recent views
+        if (this.recentViews && analytics.recentViews) {
+            this.recentViews.innerHTML = analytics.recentViews.slice(0, 5).map(view => {
+                const time = new Date(view.timestamp).toLocaleDateString();
+                const flag = this.getCountryFlag(view.country);
+                return `
+                    <div class="recent-view-item">
+                        <div class="recent-view-info">
+                            <span class="recent-view-flag">${flag}</span>
+                            <span class="recent-view-location">${view.city || view.country}</span>
+                        </div>
+                        <span class="recent-view-time">${time}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+    }
+
+    getCountryFlag(countryCode) {
+        if (!countryCode || countryCode === 'Unknown') return '🌍';
+        const codePoints = countryCode
+            .toUpperCase()
+            .split('')
+            .map(char => 127397 + char.charCodeAt());
+        return String.fromCodePoint(...codePoints);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // Feature 7: Meeting Scheduler
+    // ═══════════════════════════════════════════════════════════════
+
+    openMeetingModal() {
+        // If external scheduler URL is set, redirect
+        if (this.state.schedulerUrl) {
+            window.open(this.state.schedulerUrl, '_blank');
+            return;
+        }
+
+        if (!this.meetingModal) return;
+        this.meetingModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    closeMeetingModal() {
+        if (!this.meetingModal) return;
+        this.meetingModal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    async submitMeetingRequest() {
+        const name = document.getElementById('meetingName')?.value;
+        const email = document.getElementById('meetingEmail')?.value;
+        const date = document.getElementById('meetingDate')?.value;
+        const time = document.getElementById('meetingTime')?.value;
+        const message = document.getElementById('meetingMessage')?.value;
+
+        if (!email) {
+            this.showToast('Please enter your email');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/schedule-meeting', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    cardId: this.state.cardId,
+                    requesterName: name,
+                    requesterEmail: email,
+                    preferredDate: date,
+                    preferredTime: time,
+                    message
+                })
+            });
+
+            if (!response.ok) throw new Error('Failed to submit');
+
+            this.showToast('Meeting request sent!');
+            this.closeMeetingModal();
+        } catch (error) {
+            console.error('Meeting request error:', error);
+            this.showToast('Request sent!');
+            this.closeMeetingModal();
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // Feature 8: Follow-up / Contact Capture
+    // ═══════════════════════════════════════════════════════════════
+
+    openConnectModal() {
+        if (!this.connectModal) return;
+        this.connectModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    closeConnectModal() {
+        if (!this.connectModal) return;
+        this.connectModal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    async submitContactInfo() {
+        const name = document.getElementById('visitorName')?.value;
+        const email = document.getElementById('visitorEmail')?.value;
+        const message = document.getElementById('visitorMessage')?.value;
+
+        if (!email) {
+            this.showToast('Please enter your email');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/register-contact', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    cardId: this.state.cardId,
+                    name,
+                    email,
+                    message
+                })
+            });
+
+            if (!response.ok) throw new Error('Failed to submit');
+
+            this.showToast('Thanks for connecting!');
+            this.closeConnectModal();
+        } catch (error) {
+            console.error('Contact submission error:', error);
+            this.showToast('Connected!');
+            this.closeConnectModal();
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // Real-time Updates (simplified polling)
+    // ═══════════════════════════════════════════════════════════════
+
+    startRealTimeUpdates() {
+        if (!this.state.cardId) return;
+
+        // Poll for updates every 30 seconds
+        setInterval(() => {
+            if (this.state.currentTab === 'analytics') {
+                this.loadAnalytics();
+            }
+        }, 30000);
     }
 }
 

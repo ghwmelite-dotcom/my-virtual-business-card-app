@@ -1,6 +1,10 @@
-name = "my-virtual-business-card-app"
+name = "cardcraft"
 pages_build_output_dir = "./"
 compatibility_date = "2024-01-01"
 
 [ai]
 binding = "AI"
+
+[[kv_namespaces]]
+binding = "CARDS"
+id = "395af32c47fa4efb8e75a539e4855eec"

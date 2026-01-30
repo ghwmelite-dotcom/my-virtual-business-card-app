@@ -70,6 +70,47 @@ class CardCraft {
         };
 
         this.colorThief = null;
+
+        // Style Templates
+        this.templates = {
+            'finance-pro': {
+                cardStyle: 'dark',
+                accentColor: '#D4AF37',
+                fontStyle: 'modern',
+                textColor: 'auto'
+            },
+            'minimalist': {
+                cardStyle: 'minimal',
+                accentColor: '#1A1A1A',
+                fontStyle: 'classic',
+                textColor: 'auto'
+            },
+            'executive': {
+                cardStyle: 'light',
+                accentColor: '#1E3A5F',
+                fontStyle: 'classic',
+                textColor: 'auto'
+            },
+            'bold-modern': {
+                cardStyle: 'gradient',
+                accentColor: '#FFFFFF',
+                fontStyle: 'bold',
+                textColor: '#FFFFFF'
+            },
+            'nature': {
+                cardStyle: 'light',
+                accentColor: '#2D5A4A',
+                fontStyle: 'elegant',
+                textColor: 'auto'
+            },
+            'dark-luxe': {
+                cardStyle: 'dark',
+                accentColor: '#6B4E71',
+                fontStyle: 'elegant',
+                textColor: 'auto'
+            }
+        };
+
         this.init();
     }
 
@@ -722,6 +763,12 @@ class CardCraft {
             this.setupDragDrop(this.uploads.logoBox, 'logo');
         }
 
+        // Template cards
+        this.templateCards = document.querySelectorAll('.template-card');
+        this.templateCards.forEach(card => {
+            card.addEventListener('click', () => this.applyTemplate(card.dataset.template));
+        });
+
         // Style cards
         this.styleCards.forEach(card => {
             card.addEventListener('click', () => this.setCardStyle(card.dataset.style));
@@ -1282,6 +1329,35 @@ class CardCraft {
     // ═══════════════════════════════════════════════════════════════
     // Style Management
     // ═══════════════════════════════════════════════════════════════
+
+    applyTemplate(templateName) {
+        const template = this.templates[templateName];
+        if (!template) return;
+
+        // Update template card UI
+        this.templateCards.forEach(card => {
+            card.classList.toggle('active', card.dataset.template === templateName);
+        });
+
+        // Apply all template settings
+        this.setCardStyle(template.cardStyle);
+        this.setAccentColor(template.accentColor, null);
+        this.setFontStyle(template.fontStyle);
+        this.setTextColor(template.textColor, null);
+
+        // Update color swatch to show the template's color
+        this.colorSwatches.forEach(s => {
+            s.classList.toggle('active', s.dataset.color === template.accentColor);
+        });
+
+        // Update text color swatch
+        this.textColorSwatches.forEach(s => {
+            s.classList.toggle('active', s.dataset.textColor === template.textColor);
+        });
+
+        // Show feedback
+        this.showToast(`${templateName.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())} template applied`);
+    }
 
     setCardStyle(style) {
         this.state.cardStyle = style;

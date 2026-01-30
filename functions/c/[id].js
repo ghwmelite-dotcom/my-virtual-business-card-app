@@ -15,7 +15,7 @@ export async function onRequestGet(context) {
             return new Response('Storage not configured', { status: 500 });
         }
 
-        const cardData = await env.CARDS.get(cardId);
+        const cardData = await env.CARDS.get(`card:${cardId}`);
 
         if (!cardData) {
             return new Response(`

@@ -995,6 +995,317 @@ input, button, textarea {
     gap: var(--space-8);
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   CardCraft Watermark (Shown on Shared Cards)
+   ═══════════════════════════════════════════════════════════════ */
+
+.cardcraft-watermark {
+    display: none; /* Hidden by default, shown via JS on shared cards */
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-4) var(--space-6);
+    border-radius: 16px;
+    background: linear-gradient(
+        135deg,
+        rgba(184, 115, 51, 0.08) 0%,
+        rgba(184, 115, 51, 0.03) 50%,
+        rgba(139, 90, 43, 0.06) 100%
+    );
+    border: 1px solid rgba(184, 115, 51, 0.15);
+    text-decoration: none;
+    transition: all 0.4s var(--ease-out);
+    position: relative;
+    overflow: hidden;
+    margin-top: var(--space-4);
+}
+
+.cardcraft-watermark::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        135deg,
+        transparent 0%,
+        rgba(184, 115, 51, 0.1) 50%,
+        transparent 100%
+    );
+    opacity: 0;
+    transition: opacity 0.4s var(--ease);
+}
+
+.cardcraft-watermark:hover {
+    transform: translateY(-2px);
+    border-color: rgba(184, 115, 51, 0.3);
+    box-shadow:
+        0 8px 32px rgba(184, 115, 51, 0.15),
+        0 2px 8px rgba(184, 115, 51, 0.1);
+}
+
+.cardcraft-watermark:hover::before {
+    opacity: 1;
+}
+
+.watermark-text {
+    font-family: var(--font-body);
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    transition: color 0.3s var(--ease);
+}
+
+.watermark-brand {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--accent);
+    position: relative;
+    z-index: 1;
+}
+
+.watermark-logo {
+    width: 24px;
+    height: 24px;
+    transition: transform 0.4s var(--ease-out);
+}
+
+.cardcraft-watermark:hover .watermark-logo {
+    transform: rotate(-8deg) scale(1.1);
+}
+
+.watermark-brand span {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.watermark-cta {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent);
+    padding: var(--space-1) var(--space-3);
+    border-radius: 20px;
+    background: rgba(184, 115, 51, 0.1);
+    transition: all 0.3s var(--ease);
+    position: relative;
+    z-index: 1;
+}
+
+.cardcraft-watermark:hover .watermark-cta {
+    background: var(--accent);
+    color: white;
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .cardcraft-watermark {
+    background: linear-gradient(
+        135deg,
+        rgba(212, 145, 92, 0.1) 0%,
+        rgba(212, 145, 92, 0.03) 50%,
+        rgba(184, 115, 51, 0.08) 100%
+    );
+    border-color: rgba(212, 145, 92, 0.2);
+}
+
+[data-theme="dark"] .cardcraft-watermark:hover {
+    border-color: rgba(212, 145, 92, 0.4);
+    box-shadow:
+        0 8px 32px rgba(212, 145, 92, 0.2),
+        0 2px 8px rgba(212, 145, 92, 0.15);
+}
+
+[data-theme="dark"] .watermark-brand span {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+[data-theme="dark"] .watermark-cta {
+    background: rgba(212, 145, 92, 0.15);
+}
+
+[data-theme="dark"] .cardcraft-watermark:hover .watermark-cta {
+    background: var(--accent);
+    color: #0D0D0F;
+}
+
+/* View Mode Action Buttons */
+.view-actions {
+    display: none;
+    gap: var(--space-3);
+    margin-top: var(--space-6);
+}
+
+.view-action-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-5);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s var(--ease);
+}
+
+.view-action-btn svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+.view-action-btn:hover {
+    border-color: var(--accent);
+    background: var(--accent-light);
+    transform: translateY(-1px);
+}
+
+.view-action-btn.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+}
+
+.view-action-btn.primary:hover {
+    background: var(--accent-dark);
+    border-color: var(--accent-dark);
+    box-shadow: 0 4px 16px rgba(184, 115, 51, 0.3);
+}
+
+[data-theme="dark"] .view-action-btn.primary {
+    color: #0D0D0F;
+}
+
+[data-theme="dark"] .view-action-btn.primary:hover {
+    box-shadow: 0 4px 16px rgba(212, 145, 92, 0.4);
+}
+
+/* Show view actions in view mode with animation */
+.view-mode .view-actions {
+    display: flex;
+    animation: fadeSlideUp 0.6s var(--ease-out) 0.2s both;
+}
+
+/* Show watermark in view mode with animation */
+.view-mode .cardcraft-watermark {
+    display: flex;
+    animation: fadeSlideUp 0.6s var(--ease-out) 0.4s both;
+}
+
+@keyframes fadeSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* View mode card entrance animation */
+.view-mode .card-container {
+    animation: cardEntrance 0.8s var(--ease-out) both;
+}
+
+@keyframes cardEntrance {
+    from {
+        opacity: 0;
+        transform: translateY(24px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* View mode flip hint */
+.view-mode .card::after {
+    content: 'Tap to flip';
+    position: absolute;
+    bottom: -32px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    opacity: 0;
+    animation: hintFade 0.6s var(--ease) 1.5s both;
+}
+
+@keyframes hintFade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Hide editor controls in view mode */
+.view-mode .editor,
+.view-mode .preview-controls,
+.view-mode #previewModeBtn,
+.view-mode #saveProgressBtn,
+.view-mode #exportBtn,
+.view-mode .persona-selector {
+    display: none !important;
+}
+
+/* View mode - centered card presentation */
+.view-mode .preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 65px);
+    padding: var(--space-8);
+}
+
+.view-mode .preview-stage {
+    gap: var(--space-6);
+    padding-bottom: var(--space-8);
+}
+
+.view-mode .card-container {
+    margin-bottom: var(--space-6);
+}
+
+/* Mobile responsive */
+@media (max-width: 600px) {
+    .cardcraft-watermark {
+        padding: var(--space-3) var(--space-4);
+    }
+
+    .watermark-logo {
+        width: 20px;
+        height: 20px;
+    }
+
+    .watermark-brand span {
+        font-size: 1rem;
+    }
+
+    .view-actions {
+        flex-direction: column;
+        width: 100%;
+        max-width: 320px;
+    }
+
+    .view-action-btn {
+        justify-content: center;
+        width: 100%;
+    }
+}
+
 /* Preview Controls */
 .preview-controls {
     display: flex;

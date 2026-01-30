@@ -672,6 +672,41 @@
                         </div>
                     </div>
 
+                    <!-- View Mode Actions (shown on shared cards) -->
+                    <div class="view-actions" id="viewActions">
+                        <button class="view-action-btn primary" id="saveContactBtn">
+                            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="10" cy="6" r="4"/>
+                                <path d="M2 18c0-4 4-6 8-6s8 2 8 6"/>
+                                <path d="M15 11v6M12 14h6"/>
+                            </svg>
+                            Save Contact
+                        </button>
+                        <button class="view-action-btn" id="shareCardBtn">
+                            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="15" cy="5" r="3"/>
+                                <circle cx="5" cy="10" r="3"/>
+                                <circle cx="15" cy="15" r="3"/>
+                                <path d="M7.5 8.5l5-2M7.5 11.5l5 2"/>
+                            </svg>
+                            Share
+                        </button>
+                    </div>
+
+                    <!-- Made with CardCraft Watermark (shown on shared cards) -->
+                    <a href="/" class="cardcraft-watermark" id="cardcraftWatermark">
+                        <span class="watermark-text">Made with</span>
+                        <span class="watermark-brand">
+                            <svg class="watermark-logo" viewBox="0 0 36 36" fill="none">
+                                <path d="M13 9C8.582 9 5 12.582 5 17v2c0 4.418 3.582 8 8 8h3v-3h-3c-2.761 0-5-2.239-5-5v-2c0-2.761 2.239-5 5-5h3V9h-3z" fill="currentColor"/>
+                                <path d="M23 9h-3v3h3c2.761 0 5 2.239 5 5v2c0 2.761-2.239 5-5 5h-3v3h3c4.418 0 8-3.582 8-8v-2c0-4.418-3.582-8-8-8z" fill="currentColor"/>
+                                <rect x="15" y="15.5" width="6" height="5" rx="1" fill="currentColor" opacity="0.6"/>
+                            </svg>
+                            <span>CardCraft</span>
+                        </span>
+                        <span class="watermark-cta">Create yours free</span>
+                    </a>
+
                     <!-- Controls -->
                     <div class="preview-controls">
                         <button class="control-btn active" data-view="front" title="Front">

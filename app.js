@@ -77,9 +77,78 @@ class CardCraft {
         this.initTheme();
         this.bindElements();
         this.bindEvents();
+
+        // Check if we're viewing a shared card
+        if (this.checkViewMode()) {
+            return; // Don't load other data in view mode
+        }
+
         this.loadFromCloud(); // Try cloud first
         this.loadFromURL();
         this.generateQRCode();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // View Mode (Shared Cards)
+    // ═══════════════════════════════════════════════════════════════
+
+    checkViewMode() {
+        const params = new URLSearchParams(window.location.search);
+        const viewCardId = params.get('view');
+
+        if (viewCardId) {
+            this.enterViewMode(viewCardId);
+            return true;
+        }
+        return false;
+    }
+
+    async enterViewMode(cardId) {
+        // Add view-mode class to show watermark and hide editor
+        document.body.classList.add('view-mode');
+
+        // Update watermark link to point to home
+        const watermark = document.getElementById('cardcraftWatermark');
+        if (watermark) {
+            watermark.href = window.location.origin;
+        }
+
+        try {
+            // Fetch card data
+            const response = await fetch(`/api/get-card?id=${cardId}`);
+            const result = await response.json();
+
+            if (result.success && result.card) {
+                this.applyCardData(result.card);
+                this.generateQRCode();
+
+                // Update page title
+                if (result.card.fullName) {
+                    document.title = `${result.card.fullName} — CardCraft`;
+                }
+            } else {
+                this.showCardNotFound();
+            }
+        } catch (error) {
+            console.error('[CardCraft] Error loading shared card:', error);
+            this.showCardNotFound();
+        }
+    }
+
+    showCardNotFound() {
+        const cardContainer = document.getElementById('cardContainer');
+        if (cardContainer) {
+            cardContainer.innerHTML = `
+                <div style="text-align: center; padding: 60px 40px; color: var(--text-secondary);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 48px; height: 48px; margin-bottom: 16px; opacity: 0.5;">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 8v4M12 16h.01"/>
+                    </svg>
+                    <h3 style="margin: 0 0 8px; font-size: 1.1rem; color: var(--text);">Card Not Found</h3>
+                    <p style="margin: 0; font-size: 0.9rem;">This card may have been deleted or the link is incorrect.</p>
+                </div>
+            `;
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -752,6 +821,17 @@ class CardCraft {
         // Theme toggle
         if (this.themeToggle) {
             this.themeToggle.addEventListener('click', () => this.toggleTheme());
+        }
+
+        // View mode actions (for shared cards)
+        const saveContactBtn = document.getElementById('saveContactBtn');
+        if (saveContactBtn) {
+            saveContactBtn.addEventListener('click', () => this.generateVCard());
+        }
+
+        const shareCardBtn = document.getElementById('shareCardBtn');
+        if (shareCardBtn) {
+            shareCardBtn.addEventListener('click', () => this.shareCurrentCard());
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -1496,6 +1576,31 @@ class CardCraft {
             // Web Share API not available - copy to clipboard instead
             this.copyToClipboard(url);
             this.showToast('Link copied to clipboard!');
+        }
+    }
+
+    /**
+     * Share the current card (used in view mode)
+     * Uses current page URL for sharing
+     */
+    shareCurrentCard() {
+        const url = window.location.href;
+        const name = this.state.fullName || 'Business Card';
+
+        if (navigator.share) {
+            navigator.share({
+                title: `${name} — Digital Business Card`,
+                text: `Check out ${name}'s digital business card`,
+                url: url
+            }).then(() => {
+                this.showToast('Shared successfully!');
+            }).catch((error) => {
+                if (error.name !== 'AbortError') {
+                    this.copyToClipboard(url);
+                }
+            });
+        } else {
+            this.copyToClipboard(url);
         }
     }
 

@@ -118,6 +118,7 @@ class CardCraft {
         this.initTheme();
         this.bindElements();
         this.bindEvents();
+        this.initQRCode();
 
         // Check if we're viewing a shared card
         if (this.checkViewMode()) {
@@ -1474,8 +1475,98 @@ class CardCraft {
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // QR Code Generation
+    // QR Code Generation & Management
     // ═══════════════════════════════════════════════════════════════
+
+    initQRCode() {
+        this.qrType = 'card-url'; // Default type
+
+        // QR type selector
+        this.qrTypeOptions = document.querySelectorAll('.qr-type-option');
+        this.qrTypeOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                this.qrTypeOptions.forEach(o => o.classList.remove('active'));
+                option.classList.add('active');
+                this.qrType = option.dataset.qrType;
+                this.updateQRPreview();
+            });
+        });
+
+        // QR modal
+        this.qrModal = document.getElementById('qrModal');
+        this.qrModalCode = document.getElementById('qrModalCode');
+        this.qrModalName = document.getElementById('qrModalName');
+        this.qrModalTitle = document.getElementById('qrModalTitle');
+
+        // QR action buttons
+        document.getElementById('showQRModal')?.addEventListener('click', () => this.openQRModal());
+        document.getElementById('qrModalClose')?.addEventListener('click', () => this.closeQRModal());
+        document.getElementById('qrModalDownload')?.addEventListener('click', () => this.downloadQRImage('png', true));
+        document.getElementById('qrModalShare')?.addEventListener('click', () => this.shareQRCode());
+        document.getElementById('downloadQRPng')?.addEventListener('click', () => this.downloadQRImage('png'));
+        document.getElementById('downloadQRSvg')?.addEventListener('click', () => this.downloadQRImage('svg'));
+        document.getElementById('setQRAsLockscreen')?.addEventListener('click', () => this.downloadQRForLockscreen());
+
+        // Close modal on overlay click
+        this.qrModal?.addEventListener('click', (e) => {
+            if (e.target === this.qrModal) this.closeQRModal();
+        });
+
+        // Close on escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.qrModal?.classList.contains('active')) {
+                this.closeQRModal();
+            }
+        });
+    }
+
+    getQRData() {
+        switch (this.qrType) {
+            case 'vcard':
+                return this.generateVCardString();
+            case 'website':
+                const website = this.state.website;
+                if (!website) return window.location.href;
+                return website.startsWith('http') ? website : `https://${website}`;
+            case 'card-url':
+            default:
+                return this.state.publishedUrl || this.getShareUrl();
+        }
+    }
+
+    generateVCardString() {
+        const lines = [
+            'BEGIN:VCARD',
+            'VERSION:3.0',
+            `FN:${this.state.fullName || ''}`,
+            `N:${this.formatName()}`,
+            `TITLE:${this.state.jobTitle || ''}`,
+            `ORG:${this.state.company || ''}`,
+            `EMAIL:${this.state.email || ''}`,
+            `TEL:${this.state.phone || ''}`,
+        ];
+
+        if (this.state.website) {
+            const url = this.state.website.startsWith('http')
+                ? this.state.website
+                : `https://${this.state.website}`;
+            lines.push(`URL:${url}`);
+        }
+
+        if (this.state.location) {
+            lines.push(`ADR:;;${this.state.location};;;;`);
+        }
+
+        if (this.state.linkedin) {
+            const linkedinUrl = this.state.linkedin.startsWith('http')
+                ? this.state.linkedin
+                : `https://linkedin.com/in/${this.state.linkedin}`;
+            lines.push(`X-SOCIALPROFILE;TYPE=linkedin:${linkedinUrl}`);
+        }
+
+        lines.push('END:VCARD');
+        return lines.join('\n');
+    }
 
     generateQRCode() {
         const qrContainer = this.card.qrCode;
@@ -1507,6 +1598,286 @@ class CardCraft {
         } catch (e) {
             console.log('QR generation error:', e);
         }
+
+        // Also update the preview QR
+        this.updateQRPreview();
+    }
+
+    updateQRPreview() {
+        const previewContainer = document.getElementById('qrPreviewCode');
+        const hintEl = document.getElementById('qrPreviewHint');
+        if (!previewContainer || typeof QRCode === 'undefined') return;
+
+        previewContainer.innerHTML = '';
+        const qrData = this.getQRData();
+
+        // Update hint text
+        if (hintEl) {
+            switch (this.qrType) {
+                case 'vcard':
+                    hintEl.textContent = 'Contact info (vCard)';
+                    break;
+                case 'website':
+                    hintEl.textContent = this.state.website || 'No website set';
+                    break;
+                default:
+                    const url = this.state.publishedUrl || 'Not published yet';
+                    hintEl.textContent = url.replace('https://', '').substring(0, 30) + '...';
+            }
+        }
+
+        try {
+            QRCode.toCanvas(qrData, {
+                width: 72,
+                margin: 0,
+                color: {
+                    dark: '#1A1A1A',
+                    light: '#FFFFFF'
+                }
+            }, (error, canvas) => {
+                if (!error && canvas) {
+                    previewContainer.appendChild(canvas);
+                }
+            });
+        } catch (e) {
+            console.log('QR preview error:', e);
+        }
+    }
+
+    openQRModal() {
+        if (!this.qrModal) return;
+
+        // Update modal info
+        if (this.qrModalName) {
+            this.qrModalName.textContent = this.state.fullName || 'Your Name';
+        }
+        if (this.qrModalTitle) {
+            const title = this.state.jobTitle || '';
+            const company = this.state.company || '';
+            this.qrModalTitle.textContent = title && company ? `${title} at ${company}` : title || company || '';
+        }
+
+        // Generate large QR code
+        if (this.qrModalCode) {
+            this.qrModalCode.innerHTML = '';
+            const qrData = this.getQRData();
+
+            QRCode.toCanvas(qrData, {
+                width: 240,
+                margin: 1,
+                color: {
+                    dark: '#1A1A1A',
+                    light: '#FFFFFF'
+                }
+            }, (error, canvas) => {
+                if (!error && canvas) {
+                    this.qrModalCode.appendChild(canvas);
+                }
+            });
+        }
+
+        this.qrModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    closeQRModal() {
+        if (!this.qrModal) return;
+        this.qrModal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    async downloadQRImage(format = 'png', large = false) {
+        const qrData = this.getQRData();
+        const size = large ? 512 : 256;
+        const name = this.state.fullName?.replace(/\s+/g, '_') || 'qr-code';
+
+        if (format === 'svg') {
+            // Generate SVG
+            QRCode.toString(qrData, {
+                type: 'svg',
+                width: size,
+                margin: 2,
+                color: {
+                    dark: '#1A1A1A',
+                    light: '#FFFFFF'
+                }
+            }, (error, svg) => {
+                if (error) {
+                    this.showToast('Failed to generate QR');
+                    return;
+                }
+                const blob = new Blob([svg], { type: 'image/svg+xml' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${name}-qr.svg`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                this.showToast('QR code downloaded!');
+            });
+        } else {
+            // Generate PNG
+            QRCode.toDataURL(qrData, {
+                width: size,
+                margin: 2,
+                color: {
+                    dark: '#1A1A1A',
+                    light: '#FFFFFF'
+                }
+            }, (error, url) => {
+                if (error) {
+                    this.showToast('Failed to generate QR');
+                    return;
+                }
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${name}-qr.png`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                this.showToast('QR code downloaded!');
+            });
+        }
+    }
+
+    async downloadQRForLockscreen() {
+        const qrData = this.getQRData();
+        const name = this.state.fullName || 'Your Name';
+        const title = this.state.jobTitle || '';
+
+        // Create a canvas with phone lock screen dimensions
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Lock screen size (iPhone dimensions work well universally)
+        canvas.width = 1170;
+        canvas.height = 2532;
+
+        // Dark gradient background
+        const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        gradient.addColorStop(0, '#1a1a1a');
+        gradient.addColorStop(1, '#0d0d0d');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Generate QR code and draw it
+        QRCode.toDataURL(qrData, {
+            width: 600,
+            margin: 2,
+            color: {
+                dark: '#1A1A1A',
+                light: '#FFFFFF'
+            }
+        }, (error, qrUrl) => {
+            if (error) {
+                this.showToast('Failed to generate lock screen');
+                return;
+            }
+
+            const qrImg = new Image();
+            qrImg.onload = () => {
+                // Center QR code
+                const qrX = (canvas.width - 600) / 2;
+                const qrY = canvas.height / 2 - 400;
+
+                // Draw white rounded rectangle background for QR
+                ctx.fillStyle = '#FFFFFF';
+                this.roundRect(ctx, qrX - 40, qrY - 40, 680, 680, 32);
+                ctx.fill();
+
+                // Draw QR code
+                ctx.drawImage(qrImg, qrX, qrY, 600, 600);
+
+                // Draw name
+                ctx.fillStyle = '#FFFFFF';
+                ctx.font = '600 64px -apple-system, BlinkMacSystemFont, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(name, canvas.width / 2, qrY + 750);
+
+                // Draw title
+                if (title) {
+                    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+                    ctx.font = '400 36px -apple-system, BlinkMacSystemFont, sans-serif';
+                    ctx.fillText(title, canvas.width / 2, qrY + 810);
+                }
+
+                // Draw "Scan to connect" hint
+                ctx.fillStyle = '#B87333';
+                ctx.font = '500 32px -apple-system, BlinkMacSystemFont, sans-serif';
+                ctx.fillText('Scan to connect', canvas.width / 2, qrY + 900);
+
+                // Download
+                const a = document.createElement('a');
+                a.href = canvas.toDataURL('image/png');
+                a.download = `${name.replace(/\s+/g, '_')}-lockscreen.png`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                this.showToast('Lock screen image saved!');
+            };
+            qrImg.src = qrUrl;
+        });
+    }
+
+    // Helper for rounded rectangles
+    roundRect(ctx, x, y, width, height, radius) {
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.lineTo(x + width - radius, y);
+        ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+        ctx.lineTo(x + width, y + height - radius);
+        ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+        ctx.lineTo(x + radius, y + height);
+        ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+        ctx.lineTo(x, y + radius);
+        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.closePath();
+    }
+
+    async shareQRCode() {
+        const qrData = this.getQRData();
+        const name = this.state.fullName || 'Contact';
+
+        // Generate QR as data URL
+        QRCode.toDataURL(qrData, {
+            width: 512,
+            margin: 2,
+            color: {
+                dark: '#1A1A1A',
+                light: '#FFFFFF'
+            }
+        }, async (error, url) => {
+            if (error) {
+                this.showToast('Failed to generate QR');
+                return;
+            }
+
+            // Convert to blob for sharing
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const file = new File([blob], `${name}-qr.png`, { type: 'image/png' });
+
+            if (navigator.share && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({
+                        title: `${name}'s QR Code`,
+                        text: 'Scan this QR code to save my contact',
+                        files: [file]
+                    });
+                    this.showToast('Shared successfully!');
+                } catch (e) {
+                    if (e.name !== 'AbortError') {
+                        // Fall back to download
+                        this.downloadQRImage('png', true);
+                    }
+                }
+            } else {
+                // Fall back to download
+                this.downloadQRImage('png', true);
+            }
+        });
     }
 
     // ═══════════════════════════════════════════════════════════════

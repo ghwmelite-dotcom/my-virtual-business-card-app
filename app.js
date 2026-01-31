@@ -1518,6 +1518,16 @@ class CardCraft {
                 this.closeQRModal();
             }
         });
+
+        // Generate initial QR preview (wait for QRCode library to load)
+        const waitForQR = () => {
+            if (typeof QRCode !== 'undefined') {
+                this.updateQRPreview();
+            } else {
+                setTimeout(waitForQR, 100);
+            }
+        };
+        setTimeout(waitForQR, 100);
     }
 
     getQRData() {
@@ -1526,11 +1536,20 @@ class CardCraft {
                 return this.generateVCardString();
             case 'website':
                 const website = this.state.website;
-                if (!website) return window.location.href;
+                if (!website) return window.location.origin;
                 return website.startsWith('http') ? website : `https://${website}`;
             case 'card-url':
             default:
-                return this.state.publishedUrl || this.getShareUrl();
+                // Use published URL, or current page URL as fallback
+                if (this.state.publishedUrl) {
+                    return this.state.publishedUrl;
+                }
+                // Fallback to current origin if shareUrl isn't ready
+                try {
+                    return this.getShareUrl() || window.location.origin;
+                } catch (e) {
+                    return window.location.origin;
+                }
         }
     }
 
@@ -1606,10 +1625,30 @@ class CardCraft {
     updateQRPreview() {
         const previewContainer = document.getElementById('qrPreviewCode');
         const hintEl = document.getElementById('qrPreviewHint');
-        if (!previewContainer || typeof QRCode === 'undefined') return;
+
+        if (!previewContainer) {
+            console.log('QR preview container not found');
+            return;
+        }
+
+        if (typeof QRCode === 'undefined') {
+            console.log('QRCode library not loaded yet');
+            return;
+        }
 
         previewContainer.innerHTML = '';
-        const qrData = this.getQRData();
+
+        let qrData;
+        try {
+            qrData = this.getQRData();
+        } catch (e) {
+            console.log('Error getting QR data:', e);
+            qrData = window.location.origin;
+        }
+
+        if (!qrData) {
+            qrData = window.location.origin;
+        }
 
         // Update hint text
         if (hintEl) {

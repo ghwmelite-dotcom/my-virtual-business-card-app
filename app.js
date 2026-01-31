@@ -1656,117 +1656,136 @@ class CardCraft {
         const previewContainer = document.getElementById('qrPreviewCode');
         const hintEl = document.getElementById('qrPreviewHint');
 
-        if (!previewContainer) {
-            console.log('QR preview container not found');
-            return;
-        }
-
-        if (typeof QRCode === 'undefined') {
-            console.log('QRCode library not loaded yet');
-            return;
-        }
+        if (!previewContainer) return;
+        if (typeof QRCode === 'undefined') return;
 
         previewContainer.innerHTML = '';
 
-        let qrData;
+        // Get QR data based on selected type
+        let qrData = window.location.origin;
+        let hintText = 'Scan to connect';
+
         try {
-            qrData = this.getQRData();
-        } catch (e) {
-            console.log('Error getting QR data:', e);
-            qrData = window.location.origin;
-        }
-
-        if (!qrData) {
-            qrData = window.location.origin;
-        }
-
-        // Update hint text
-        if (hintEl) {
             switch (this.qrType) {
                 case 'vcard':
-                    hintEl.textContent = 'Contact info (vCard)';
+                    qrData = this.generateVCardString();
+                    hintText = 'Contact info (vCard)';
                     break;
                 case 'website':
-                    hintEl.textContent = this.state.website || 'No website set';
+                    if (this.state.website) {
+                        qrData = this.state.website.startsWith('http')
+                            ? this.state.website
+                            : `https://${this.state.website}`;
+                        hintText = this.state.website;
+                    } else {
+                        hintText = 'No website set';
+                    }
                     break;
+                case 'card-url':
                 default:
-                    const url = this.state.publishedUrl || 'Not published yet';
-                    hintEl.textContent = url.replace('https://', '').substring(0, 30) + '...';
+                    if (this.state.publishedUrl) {
+                        qrData = this.state.publishedUrl;
+                        hintText = qrData.replace('https://', '').substring(0, 25) + '...';
+                    } else {
+                        hintText = 'Publish card first';
+                    }
+                    break;
             }
+        } catch (e) {
+            console.error('QR data error:', e);
         }
 
-        try {
-            QRCode.toCanvas(qrData, {
-                width: 72,
-                margin: 0,
-                color: {
-                    dark: '#1A1A1A',
-                    light: '#FFFFFF'
-                }
-            }, (error, canvas) => {
-                if (!error && canvas) {
-                    previewContainer.appendChild(canvas);
-                }
-            });
-        } catch (e) {
-            console.log('QR preview error:', e);
+        // Update hint
+        if (hintEl) {
+            hintEl.textContent = hintText;
         }
+
+        // Generate QR on canvas
+        QRCode.toCanvas(canvas, qrData, {
+            width: 72,
+            margin: 1,
+            color: {
+                dark: '#000000',
+                light: '#FFFFFF'
+            },
+            errorCorrectionLevel: 'M'
+        }, (error) => {
+            if (!error) {
+                previewContainer.appendChild(canvas);
+            }
+        });
     }
 
     openQRModal() {
-        console.log('openQRModal called, qrModal element:', this.qrModal);
+        // Get fresh references to modal elements
+        const modal = document.getElementById('qrModal');
+        const qrCodeContainer = document.getElementById('qrModalCode');
+        const nameEl = document.getElementById('qrModalName');
+        const titleEl = document.getElementById('qrModalTitle');
 
-        // Try to get modal again if not found initially
-        if (!this.qrModal) {
-            this.qrModal = document.getElementById('qrModal');
-        }
-
-        if (!this.qrModal) {
-            console.error('QR Modal element not found!');
-            this.showToast('Error opening QR modal');
+        if (!modal) {
+            this.showToast('Error: Modal not found');
             return;
         }
 
-        // Update modal info
-        if (this.qrModalName) {
-            this.qrModalName.textContent = this.state.fullName || 'Your Name';
+        // Update name and title
+        if (nameEl) {
+            nameEl.textContent = this.state.fullName || 'Your Name';
         }
-        if (this.qrModalTitle) {
+        if (titleEl) {
             const title = this.state.jobTitle || '';
             const company = this.state.company || '';
-            this.qrModalTitle.textContent = title && company ? `${title} at ${company}` : title || company || '';
+            titleEl.textContent = title && company ? `${title} at ${company}` : title || company || '';
         }
 
-        // Generate large QR code
-        if (this.qrModalCode) {
-            this.qrModalCode.innerHTML = '';
+        // Generate QR code
+        if (qrCodeContainer && typeof QRCode !== 'undefined') {
+            qrCodeContainer.innerHTML = '';
 
-            let qrData;
+            // Get QR data
+            let qrData = window.location.origin;
             try {
-                qrData = this.getQRData();
+                if (this.state.publishedUrl) {
+                    qrData = this.state.publishedUrl;
+                } else if (this.state.website) {
+                    qrData = this.state.website.startsWith('http')
+                        ? this.state.website
+                        : `https://${this.state.website}`;
+                } else if (this.state.email) {
+                    qrData = `mailto:${this.state.email}`;
+                }
             } catch (e) {
-                qrData = window.location.origin;
+                console.error('QR data error:', e);
             }
 
-            if (typeof QRCode !== 'undefined') {
-                QRCode.toCanvas(qrData, {
-                    width: 240,
-                    margin: 1,
-                    color: {
-                        dark: '#1A1A1A',
-                        light: '#FFFFFF'
-                    }
-                }, (error, canvas) => {
-                    if (!error && canvas) {
-                        this.qrModalCode.appendChild(canvas);
-                    }
-                });
-            }
+            // Create canvas element
+            const canvas = document.createElement('canvas');
+            canvas.width = 240;
+            canvas.height = 240;
+            canvas.style.borderRadius = '16px';
+
+            // Generate QR code on canvas
+            QRCode.toCanvas(canvas, qrData, {
+                width: 240,
+                margin: 2,
+                color: {
+                    dark: '#000000',
+                    light: '#FFFFFF'
+                },
+                errorCorrectionLevel: 'H'
+            }, (error) => {
+                if (error) {
+                    console.error('QR generation error:', error);
+                    qrCodeContainer.innerHTML = '<p style="color:#999;font-size:14px;">Error generating QR</p>';
+                } else {
+                    qrCodeContainer.appendChild(canvas);
+                }
+            });
         }
 
-        this.qrModal.classList.add('active');
+        // Show modal
+        modal.classList.add('active');
         document.body.style.overflow = 'hidden';
-        console.log('QR Modal should now be visible');
     }
 
     closeQRModal() {

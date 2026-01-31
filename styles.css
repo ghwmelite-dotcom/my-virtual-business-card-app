@@ -1246,7 +1246,12 @@ input, button, textarea {
     align-items: center;
     justify-content: center;
     min-height: 100vh;
+    width: 100%;
     padding: var(--space-8);
+    background: transparent !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    max-width: none !important;
     animation: qrModalIn 0.4s var(--ease-out);
 }
 

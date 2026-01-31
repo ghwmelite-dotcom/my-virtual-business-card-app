@@ -1229,12 +1229,14 @@ input, button, textarea {
    QR Modal (Full Screen for Events)
    ═══════════════════════════════════════════════════════════════ */
 
-.qr-modal-overlay {
-    background: rgba(0, 0, 0, 0.95);
+.qr-modal-overlay,
+.modal-overlay.qr-modal-overlay {
+    background: rgba(0, 0, 0, 0.95) !important;
     backdrop-filter: blur(20px);
 }
 
-.qr-modal-overlay.active {
+.qr-modal-overlay.active,
+.modal-overlay.qr-modal-overlay.active {
     opacity: 1;
     visibility: visible;
 }

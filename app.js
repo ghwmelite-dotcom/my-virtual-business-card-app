@@ -1492,20 +1492,50 @@ class CardCraft {
             });
         });
 
-        // QR modal
+        // QR modal elements
         this.qrModal = document.getElementById('qrModal');
         this.qrModalCode = document.getElementById('qrModalCode');
         this.qrModalName = document.getElementById('qrModalName');
         this.qrModalTitle = document.getElementById('qrModalTitle');
 
-        // QR action buttons
-        document.getElementById('showQRModal')?.addEventListener('click', () => this.openQRModal());
-        document.getElementById('qrModalClose')?.addEventListener('click', () => this.closeQRModal());
-        document.getElementById('qrModalDownload')?.addEventListener('click', () => this.downloadQRImage('png', true));
-        document.getElementById('qrModalShare')?.addEventListener('click', () => this.shareQRCode());
-        document.getElementById('downloadQRPng')?.addEventListener('click', () => this.downloadQRImage('png'));
-        document.getElementById('downloadQRSvg')?.addEventListener('click', () => this.downloadQRImage('svg'));
-        document.getElementById('setQRAsLockscreen')?.addEventListener('click', () => this.downloadQRForLockscreen());
+        // QR action buttons with error handling
+        const showQRBtn = document.getElementById('showQRModal');
+        if (showQRBtn) {
+            showQRBtn.addEventListener('click', () => {
+                console.log('Show QR button clicked');
+                this.openQRModal();
+            });
+        }
+
+        const qrCloseBtn = document.getElementById('qrModalClose');
+        if (qrCloseBtn) {
+            qrCloseBtn.addEventListener('click', () => this.closeQRModal());
+        }
+
+        const qrModalDownloadBtn = document.getElementById('qrModalDownload');
+        if (qrModalDownloadBtn) {
+            qrModalDownloadBtn.addEventListener('click', () => this.downloadQRImage('png', true));
+        }
+
+        const qrModalShareBtn = document.getElementById('qrModalShare');
+        if (qrModalShareBtn) {
+            qrModalShareBtn.addEventListener('click', () => this.shareQRCode());
+        }
+
+        const downloadPngBtn = document.getElementById('downloadQRPng');
+        if (downloadPngBtn) {
+            downloadPngBtn.addEventListener('click', () => this.downloadQRImage('png'));
+        }
+
+        const downloadSvgBtn = document.getElementById('downloadQRSvg');
+        if (downloadSvgBtn) {
+            downloadSvgBtn.addEventListener('click', () => this.downloadQRImage('svg'));
+        }
+
+        const lockscreenBtn = document.getElementById('setQRAsLockscreen');
+        if (lockscreenBtn) {
+            lockscreenBtn.addEventListener('click', () => this.downloadQRForLockscreen());
+        }
 
         // Close modal on overlay click
         this.qrModal?.addEventListener('click', (e) => {
@@ -1684,7 +1714,18 @@ class CardCraft {
     }
 
     openQRModal() {
-        if (!this.qrModal) return;
+        console.log('openQRModal called, qrModal element:', this.qrModal);
+
+        // Try to get modal again if not found initially
+        if (!this.qrModal) {
+            this.qrModal = document.getElementById('qrModal');
+        }
+
+        if (!this.qrModal) {
+            console.error('QR Modal element not found!');
+            this.showToast('Error opening QR modal');
+            return;
+        }
 
         // Update modal info
         if (this.qrModalName) {
@@ -1699,24 +1740,33 @@ class CardCraft {
         // Generate large QR code
         if (this.qrModalCode) {
             this.qrModalCode.innerHTML = '';
-            const qrData = this.getQRData();
 
-            QRCode.toCanvas(qrData, {
-                width: 240,
-                margin: 1,
-                color: {
-                    dark: '#1A1A1A',
-                    light: '#FFFFFF'
-                }
-            }, (error, canvas) => {
-                if (!error && canvas) {
-                    this.qrModalCode.appendChild(canvas);
-                }
-            });
+            let qrData;
+            try {
+                qrData = this.getQRData();
+            } catch (e) {
+                qrData = window.location.origin;
+            }
+
+            if (typeof QRCode !== 'undefined') {
+                QRCode.toCanvas(qrData, {
+                    width: 240,
+                    margin: 1,
+                    color: {
+                        dark: '#1A1A1A',
+                        light: '#FFFFFF'
+                    }
+                }, (error, canvas) => {
+                    if (!error && canvas) {
+                        this.qrModalCode.appendChild(canvas);
+                    }
+                });
+            }
         }
 
         this.qrModal.classList.add('active');
         document.body.style.overflow = 'hidden';
+        console.log('QR Modal should now be visible');
     }
 
     closeQRModal() {

@@ -1234,6 +1234,11 @@ input, button, textarea {
     backdrop-filter: blur(20px);
 }
 
+.qr-modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
 .qr-modal {
     position: relative;
     display: flex;
